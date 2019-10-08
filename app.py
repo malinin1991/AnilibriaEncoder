@@ -33,7 +33,7 @@ def encode_video(from_dir, to_dir):
                        '-preset medium ' \
                        '-c:v libx265 ' \
                        '-vf format=yuv420p10le ' \
-                       '-x265-params "profile=main10:level=5.1:crf=23:ref=6" ' \
+                       '-x265-params "level=5.1:crf=23:ref=6" ' \
                        '-acodec copy ' \
                        '-map 0 ' \
                        '-r {framerate_num}/{framerate_den} ' \
