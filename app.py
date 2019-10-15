@@ -1,17 +1,7 @@
 from pymediainfo import MediaInfo
+from config import *
 import subprocess
 import os
-
-fromdir = r'E:\2019\Kenja no Mago - AniLibria.TV [WEBRip 1080p]\\'     # Папка, из которой будем брать файлы.
-todir = r'D:\2019\Kenja no Mago - AniLibria.TV [WEBRip 1080p HEVC]\\'  # Папка, в которую будем записывать готовое.
-tmp_dir = r'C:\temp\\'   # Папка, в которую будут писаться временные файлы.
-ffmpeg = r'C:\Program Files\ffmpeg\bin\ffmpeg.exe'
-mkvpropedit = r'C:\Program Files\MKVToolNix\mkvpropedit.exe'     # Путь к mkvpropedit.exe
-mkvmerge = r'C:\Program Files\MKVToolNix\mkvmerge.exe'   # Путь к mkvmerge.exe
-# В данном случае важно экранировать слэши (\\)
-
-prepare = False
-need_encode = True
 
 
 # Удаление тегов. На вход - путь к файлу mkv.
@@ -95,11 +85,12 @@ def fix_files(from_dir, to_dir):
             subs = None
 
         cmd = '"{mkvmerge}"'.format(mkvmerge=mkvmerge)+' -o "{output}" ' \
-                       '--track-name 0:"Original [GeeKaZ0iD]" --language 0:jpn --default-track 0:yes --forced-track 0:yes '\
+                       '--track-name 0:"Original [{nickname}]" --language 0:jpn --default-track 0:yes --forced-track 0:yes '\
                        '--track-name 1:AniLibria.TV --language 1:rus --default-track 1:yes --forced-track 1:yes --sync 1:{rel1} '\
                        '--track-name 2:Original --language 2:jpn --default-track 2:no --forced-track 2:no --sync 2:{rel2} '.format(
                                         output=to_dir+mkv.replace('].mkv', '_HEVC].mkv'),
-                                        rel1=rel[0], rel2=rel[1]) \
+                                        rel1=rel[0], rel2=rel[1],
+                                        nickname=nickname) \
                        + subs + \
                        '"{input}"'.format(input=from_dir+mkv)
         # --track-name id:string - имя потока (title)
@@ -156,8 +147,8 @@ def merge_hevc(from_dir, to_dir):
                                           rel1=rel[0],
                                           rel2=rel[1])
 
-        src1 = '--track-name 0:"Original [GeeKaZ0iD]" --language 0:jpn --default-track 0:yes --forced-track 0:yes ' \
-               '"{from_dir}{mkv}" '.format(from_dir=from_dir+'source\\', mkv=mkv)
+        src1 = '--track-name 0:"Original [{nickname}]" --language 0:jpn --default-track 0:yes --forced-track 0:yes ' \
+               '"{from_dir}{mkv}" '.format(from_dir=from_dir+'source\\', mkv=mkv, nickname=nickname)
         cmd = '"{mkvmerge}"'.format(mkvmerge=mkvmerge) + ' -o "{output}'.format(output=to_dir + mkv.replace('].mkv', '_HEVC].mkv" ')
                                                                                          + src0
                                                                                          + subs
@@ -173,7 +164,7 @@ def merge_hevc(from_dir, to_dir):
 
 if need_encode:
     encode_video(fromdir, tmp_dir, prepare)
-if prepare:
+if need_merge:
     merge_hevc(tmp_dir, todir)
 else:
     fix_files(tmp_dir, todir)
