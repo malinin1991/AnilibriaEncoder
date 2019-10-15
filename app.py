@@ -2,14 +2,16 @@ from pymediainfo import MediaInfo
 import subprocess
 import os
 
-mode = 1
-fromdir = r'E:\2019\Bokutachi wa Benkyou ga Dekinai - AniLibria.TV [WEBRip 1080p]\\'     # Папка, из которой будем брать файлы.
+fromdir = r'E:\2019\Kenja no Mago - AniLibria.TV [WEBRip 1080p]\\'     # Папка, из которой будем брать файлы.
+todir = r'D:\2019\Kenja no Mago - AniLibria.TV [WEBRip 1080p HEVC]\\'  # Папка, в которую будем записывать готовое.
 tmp_dir = r'C:\temp\\'   # Папка, в которую будут писаться временные файлы.
-todir = r'D:\2019\Bokutachi wa Benkyou ga Dekinai - AniLibria.TV [WEBRip 1080p HEVC]\\'  # Папка, в которую будем записывать готовое.
 ffmpeg = r'C:\Program Files\ffmpeg\bin\ffmpeg.exe'
 mkvpropedit = r'C:\Program Files\MKVToolNix\mkvpropedit.exe'     # Путь к mkvpropedit.exe
 mkvmerge = r'C:\Program Files\MKVToolNix\mkvmerge.exe'   # Путь к mkvmerge.exe
 # В данном случае важно экранировать слэши (\\)
+
+prepare = False
+need_encode = True
 
 
 # Удаление тегов. На вход - путь к файлу mkv.
@@ -19,7 +21,7 @@ def del_tags(mkv):
     return None
 
 
-def encode_video(from_dir, to_dir):
+def encode_video(from_dir, to_dir, prepare_hevc):
     if not os.path.isdir(to_dir):
         os.makedirs(to_dir)
     files = os.listdir(from_dir)
@@ -28,17 +30,31 @@ def encode_video(from_dir, to_dir):
         media_info = MediaInfo.parse(from_dir + file)
         fr_den = media_info.tracks[1].framerate_den
         fr_num = media_info.tracks[1].framerate_num
-        ffmpeg_param = '-hide_banner ' \
-                       '-i "{input}" ' \
-                       '-preset medium ' \
-                       '-c:v libx265 ' \
-                       '-vf format=yuv420p10le ' \
-                       '-x265-params "level=5.1:crf=23:ref=6" ' \
-                       '-acodec copy ' \
-                       '-map 0 ' \
-                       '-r {framerate_num}/{framerate_den} ' \
-                       '-f matroska "{output}"'.format(input=from_dir+file, output=to_dir+file,
-                                                       framerate_num=fr_num, framerate_den=fr_den)
+        if not prepare_hevc:
+            ffmpeg_param = '-hide_banner ' \
+                           '-i "{input}" ' \
+                           '-preset medium ' \
+                           '-c:v libx265 ' \
+                           '-vf format=yuv420p10le ' \
+                           '-x265-params "level=5.1:crf=23:ref=6" ' \
+                           '-acodec copy ' \
+                           '-map 0 ' \
+                           '-r {framerate_num}/{framerate_den} ' \
+                           '-f matroska "{output}"'.format(input=from_dir+file, output=to_dir+file,
+                                                           framerate_num=fr_num, framerate_den=fr_den)
+        else:
+            ffmpeg_param = '-hide_banner ' \
+                           '-i "{input}" ' \
+                           '-preset medium ' \
+                           '-c:v libx265 ' \
+                           '-vf format=yuv420p10le ' \
+                           '-x265-params "level=5.1:crf=23:ref=6" ' \
+                           '-r {framerate_num}/{framerate_den} ' \
+                           '-an ' \
+                           '-dn ' \
+                           '-sn ' \
+                           '-f matroska "{output}"'.format(input=from_dir + file, output=to_dir+'source\\' + file,
+                                                           framerate_num=fr_num, framerate_den=fr_den)
         process = subprocess.run('"{ffmpeg}" '.format(ffmpeg=ffmpeg)+ffmpeg_param, shell=True)
         if process.returncode == 0:
             print('DONE')
@@ -105,5 +121,59 @@ def fix_files(from_dir, to_dir):
     return None
 
 
-encode_video(fromdir, tmp_dir)
-fix_files(tmp_dir, todir)
+def merge_hevc(from_dir, to_dir):
+    if not os.path.isdir(to_dir):
+        os.makedirs(to_dir)
+    # Получаем список файлов в папке
+    files = os.listdir(from_dir)
+    # Оставляем тольео mkv
+    mkvs = filter(lambda x: x.endswith('.mkv'), files)
+    for mkv in mkvs:
+        if mkv[0] == 'o':
+            continue
+        del_tags(from_dir + mkv)  # Удаляем теги
+        rel = []  # Сюда будем складывать задержку аудио
+        sub_count = 0
+        media_info = MediaInfo.parse(from_dir + mkv)  # Получаем информацию о конкретном файле
+        for track in media_info.tracks:
+            if track.track_type == 'Audio':  # Берём только аудио
+                rel.append(-track.delay_relative_to_video)  # Берём значение задержки и меняем её знак
+            if track.track_type == 'Text':
+                sub_count += 1
+        if sub_count == 2:
+            subs = '--track-name 3:"Надписи [AniLibria.TV]" --language 3:rus --default-track 3:yes --forced-track 3:yes --sub-charset 3:UTF-8 ' \
+                   '--track-name 4:"Полные [AniLibria.TV]" --language 4:rus --default-track 4:no --forced-track 4:no --sub-charset 4:UTF-8 '
+            order = '--track-order 1:0,0:1,0:2,0:3,0:4 '
+        elif sub_count == 1:
+            subs = '--track-name 3:"Полные [AniLibria.TV]" --language 3:rus --default-track 3:no --forced-track 3:no --sub-charset 3:UTF-8 '
+            order = '--track-order 1:0,0:1,0:2,0:3 '
+        else:
+            subs = None
+            order = '--track-order 1:0,0:1,0:2 '
+        src0 = '--no-video ' \
+               '--track-name 1:"AniLibria.TV" --language 1:rus --default-track 1:yes --forced-track 1:yes --sync 1:{rel1} ' \
+               '--track-name 2:"Original" --language 2:jpn --default-track 2:no --forced-track 2:no --sync 2:{rel2} '.format(
+                                          rel1=rel[0],
+                                          rel2=rel[1])
+
+        src1 = '--track-name 0:"Original [GeeKaZ0iD]" --language 0:jpn --default-track 0:yes --forced-track 0:yes ' \
+               '"{from_dir}{mkv}" '.format(from_dir=from_dir+'source\\', mkv=mkv)
+        cmd = '"{mkvmerge}"'.format(mkvmerge=mkvmerge) + ' -o "{output}'.format(output=to_dir + mkv.replace('].mkv', '_HEVC].mkv" ')
+                                                                                         + src0
+                                                                                         + subs
+                                                                                         + '"{from_dir}{mkv}" '.format(from_dir=from_dir, mkv=mkv)
+                                                                                         + src1
+                                                                                         + order)
+        process = subprocess.run(cmd, shell=True)
+        if process.returncode == 0:
+            os.remove(from_dir + mkv)
+    # Если видим сообщение "Multiplexing took 4 seconds.", то всё идёт хорошо.
+    return None
+
+
+if need_encode:
+    encode_video(fromdir, tmp_dir, prepare)
+if prepare:
+    merge_hevc(tmp_dir, todir)
+else:
+    fix_files(tmp_dir, todir)
