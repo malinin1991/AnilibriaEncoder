@@ -76,13 +76,17 @@ def fix_files(from_dir, to_dir):
         # 4. Субтитры с надписями на русском языке
         # 5. Полные субтитры на русском языке
         # Переменная cmd - это строка, которую мы потом передадим в subprocess.
-        if sub_count == 2:
+        if sub_count == 3:
+            subs = '--subtitle-tracks 4,5 ' \
+                   '--track-name 4:"Надписи [AniLibria.TV]" --language 4:rus --default-track 4:yes --forced-track 4:yes --sub-charset 4:UTF-8 ' \
+                   '--track-name 5:"Полные [AniLibria.TV]" --language 5:rus --default-track 5:no --forced-track 5:no --sub-charset 5:UTF-8 '
+        elif sub_count == 2:
             subs = '--track-name 3:"Надписи [AniLibria.TV]" --language 3:rus --default-track 3:yes --forced-track 3:yes --sub-charset 3:UTF-8 ' \
                    '--track-name 4:"Полные [AniLibria.TV]" --language 4:rus --default-track 4:no --forced-track 4:no --sub-charset 4:UTF-8 '
         elif sub_count == 1:
             subs = '--track-name 3:"Полные [AniLibria.TV]" --language 3:rus --default-track 3:no --forced-track 3:no --sub-charset 3:UTF-8 '
         else:
-            subs = None
+            subs = ''
 
         cmd = '"{mkvmerge}"'.format(mkvmerge=mkvmerge)+' -o "{output}" ' \
                        '--track-name 0:"Original [{nickname}]" --language 0:jpn --default-track 0:yes --forced-track 0:yes '\
@@ -131,7 +135,12 @@ def merge_hevc(from_dir, to_dir):
                 rel.append(-track.delay_relative_to_video)  # Берём значение задержки и меняем её знак
             if track.track_type == 'Text':
                 sub_count += 1
-        if sub_count == 2:
+        if sub_count == 3:
+            subs = '--subtitle-tracks 4,5 ' \
+                   '--track-name 4:"Надписи [AniLibria.TV]" --language 4:rus --default-track 4:yes --forced-track 4:yes --sub-charset 4:UTF-8 ' \
+                   '--track-name 5:"Полные [AniLibria.TV]" --language 5:rus --default-track 5:no --forced-track 5:no --sub-charset 5:UTF-8 '
+            order = '--track-order 1:0,0:1,0:2,0:4,0:5 '
+        elif sub_count == 2:
             subs = '--track-name 3:"Надписи [AniLibria.TV]" --language 3:rus --default-track 3:yes --forced-track 3:yes --sub-charset 3:UTF-8 ' \
                    '--track-name 4:"Полные [AniLibria.TV]" --language 4:rus --default-track 4:no --forced-track 4:no --sub-charset 4:UTF-8 '
             order = '--track-order 1:0,0:1,0:2,0:3,0:4 '
@@ -139,7 +148,7 @@ def merge_hevc(from_dir, to_dir):
             subs = '--track-name 3:"Полные [AniLibria.TV]" --language 3:rus --default-track 3:no --forced-track 3:no --sub-charset 3:UTF-8 '
             order = '--track-order 1:0,0:1,0:2,0:3 '
         else:
-            subs = None
+            subs = ''
             order = '--track-order 1:0,0:1,0:2 '
         src0 = '--no-video ' \
                '--track-name 1:"AniLibria.TV" --language 1:rus --default-track 1:yes --forced-track 1:yes --sync 1:{rel1} ' \
