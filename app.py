@@ -85,6 +85,7 @@ def fix_files(from_dir, to_dir):
                 audio_count += 1
             if track.track_type == 'Text':
                 sub_count += 1
+                sub_default = track.default
         # А дальше начинается магия. Для каждого потока в mkv прописываются свои значения.
         # Важно, чтобы потоки шли в таком порядке:
         # 1. Видео
@@ -97,7 +98,10 @@ def fix_files(from_dir, to_dir):
             subs = ['--track-name !num:"Надписи [AniLibria.TV]" --language !num:rus --default-track !num:yes --forced-track !num:yes --sub-charset !num:UTF-8 ',
                    '--track-name !num:"Полные [AniLibria.TV]" --language !num:rus --default-track !num:no --forced-track !num:no --sub-charset !num:UTF-8 ']
         elif sub_count == 1:
-            subs = ['--track-name !num:"Полные [AniLibria.TV]" --language !num:rus --default-track !num:no --forced-track !num:no --sub-charset !num:UTF-8 ']
+            if sub_default == 'No':
+                subs = ['--track-name !num:"Полные [AniLibria.TV]" --language !num:rus --default-track !num:no --forced-track !num:no --sub-charset !num:UTF-8 ']
+            elif sub_default == 'Yes':
+                subs = ['--track-name !num:"Надписи [AniLibria.TV]" --language !num:rus --default-track !num:yes --forced-track !num:yes --sub-charset !num:UTF-8 ']
         # elif sub_count == 3:
         #     subs = '--subtitle-tracks 4,5 ' \
         #            '--track-name 4:"Надписи [AniLibria.TV]" --language 4:rus --default-track 4:yes --forced-track 4:yes --sub-charset 4:UTF-8 ' \
