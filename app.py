@@ -107,7 +107,7 @@ def fix_files(from_dir, to_dir):
         #            '--track-name 4:"Надписи [AniLibria.TV]" --language 4:rus --default-track 4:yes --forced-track 4:yes --sub-charset 4:UTF-8 ' \
         #            '--track-name 5:"Полные [AniLibria.TV]" --language 5:rus --default-track 5:no --forced-track 5:no --sub-charset 5:UTF-8 '
         else:
-            subs = ''
+            subs = ['']
         if audio_count == 1:
             audio = ['--track-name !num:AniLibria.TV --language !num:rus --default-track !num:yes --forced-track !num:yes --sync !num:{rel1} '.format(rel1=rel[0])]
         elif audio_count == 2:
