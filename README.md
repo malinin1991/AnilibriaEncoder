@@ -75,19 +75,32 @@ _Внимание в системах Windows все пути до папок д
 
 ## Сделать старый релиз в HEVC. Параметры:
 * `need_encode = True`
+* `need_fix = True`
+* `create_opus = False`
 * `prepare = False`
 * `need_merge = False`
 
 После чего запустить программу.
 
-## Подготовить из исходников HEVC и дальше соединить с готовым релизом от технаря:
+## Подготовить из исходников HEVC чтобы дальше соединить с готовым релизом от технаря:
 * `need_encode = True`
+* `need_fix = False`
+* `create_opus = False`
 * `prepare = True`
 * `need_merge = False`
 
 После кодирования, когда будет готов релиз, в папку из переменной temp подложить файл от технаря (из релиза) и переименовать файлы так, чтобы у них было одинаковое название (взять за основы файл из релиза). Затем выставить параметры:
 * `need_encode = False`
+* `need_fix = False`
+* `create_opus = False`
 * `prepare = False`
 * `need_merge = True`
 
 И снова запустить выполнение. Далее из папки **todir** забрать готовый материал.
+
+## Перекодировать релиз BD-Rip в HEVC  кодеком opus
+* `need_encode = True`
+* `need_fix = True`
+* `create_opus = True`
+* `prepare = False`
+* `need_merge = False`

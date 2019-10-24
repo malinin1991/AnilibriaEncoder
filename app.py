@@ -78,6 +78,7 @@ def fix_files(from_dir, to_dir):
         rel = []    # Сюда будем складывать задержку аудио
         sub_count = 0
         audio_count = 0
+        sub_default = None
         media_info = MediaInfo.parse(from_dir+mkv)   # Получаем информацию о конкретном файле
         for track in media_info.tracks:
             if track.track_type == 'Audio':     # Берём только аудио
