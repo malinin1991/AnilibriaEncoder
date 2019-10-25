@@ -7,7 +7,8 @@ import os
 # Удаление тегов. На вход - путь к файлу mkv.
 def del_tags(mkv):
     # Удаление тегов делается через ключ "--tags all: ". Пробел на конце важен.
-    subprocess.run('"{mkvpropedit}"'.format(mkvpropedit=mkvpropedit)+' {mkv} --tags all: '.format(mkv=mkv), shell=True)
+    subprocess.run('"{mkvpropedit}"'.format(mkvpropedit=mkvpropedit) + ' {mkv} --tags all: '.format(mkv=mkv),
+                   shell=True)
     return None
 
 
@@ -35,7 +36,7 @@ def encode_video(from_dir, to_dir, prepare_hevc, create_opus):
                            '-an ' \
                            '-dn ' \
                            '-sn ' \
-                           '-f matroska "{output}"'.format(input=from_dir + file, output=to_dir+'source\\' + file,
+                           '-f matroska "{output}"'.format(input=from_dir + file, output=to_dir + 'source\\' + file,
                                                            rate=rate)
         elif create_opus:
             ffmpeg_param = '-hide_banner ' \
@@ -48,7 +49,7 @@ def encode_video(from_dir, to_dir, prepare_hevc, create_opus):
                            '-ac 2 -af "pan=stereo|FL=FC+0.30*FL+0.30*BL|FR=FC+0.30*FR+0.30*BR" ' \
                            '-map 0 ' \
                            '-r {rate} ' \
-                           '-f matroska "{output}"'.format(input=from_dir+file, output=to_dir+file, rate=rate)
+                           '-f matroska "{output}"'.format(input=from_dir + file, output=to_dir + file, rate=rate)
         else:
             ffmpeg_param = '-hide_banner ' \
                            '-i "{input}" ' \
@@ -59,8 +60,8 @@ def encode_video(from_dir, to_dir, prepare_hevc, create_opus):
                            '-acodec copy ' \
                            '-map 0 ' \
                            '-r {rate} ' \
-                           '-f matroska "{output}"'.format(input=from_dir+file, output=to_dir+file, rate=rate)
-        process = subprocess.run('"{ffmpeg}" '.format(ffmpeg=ffmpeg)+ffmpeg_param, shell=True)
+                           '-f matroska "{output}"'.format(input=from_dir + file, output=to_dir + file, rate=rate)
+        process = subprocess.run('"{ffmpeg}" '.format(ffmpeg=ffmpeg) + ffmpeg_param, shell=True)
         if process.returncode == 0:
             print('DONE')
     return None
@@ -74,14 +75,14 @@ def fix_files(from_dir, to_dir):
     # Оставляем тольео mkv
     mkvs = filter(lambda x: x.endswith('.mkv'), files)
     for mkv in mkvs:
-        del_tags(from_dir+mkv)   # Удаляем теги
-        rel = []    # Сюда будем складывать задержку аудио
+        del_tags(from_dir + mkv)  # Удаляем теги
+        rel = []  # Сюда будем складывать задержку аудио
         sub_count = 0
         audio_count = 0
         sub_default = None
-        media_info = MediaInfo.parse(from_dir+mkv)   # Получаем информацию о конкретном файле
+        media_info = MediaInfo.parse(from_dir + mkv)  # Получаем информацию о конкретном файле
         for track in media_info.tracks:
-            if track.track_type == 'Audio':     # Берём только аудио
+            if track.track_type == 'Audio':  # Берём только аудио
                 rel.append(-track.delay_relative_to_video)  # Берём значение задержки и меняем её знак
                 audio_count += 1
             if track.track_type == 'Text':
@@ -96,13 +97,16 @@ def fix_files(from_dir, to_dir):
         # 5. Полные субтитры на русском языке
         # Переменная cmd - это строка, которую мы потом передадим в subprocess.
         if sub_count == 2:
-            subs = ['--track-name !num:"Надписи [AniLibria.TV]" --language !num:rus --default-track !num:yes --forced-track !num:yes --sub-charset !num:UTF-8 ',
-                   '--track-name !num:"Полные [AniLibria.TV]" --language !num:rus --default-track !num:no --forced-track !num:no --sub-charset !num:UTF-8 ']
+            subs = [
+                '--track-name !num:"Надписи [AniLibria.TV]" --language !num:rus --default-track !num:yes --forced-track !num:yes --sub-charset !num:UTF-8 ',
+                '--track-name !num:"Полные [AniLibria.TV]" --language !num:rus --default-track !num:no --forced-track !num:no --sub-charset !num:UTF-8 ']
         elif sub_count == 1:
             if sub_default == 'No':
-                subs = ['--track-name !num:"Полные [AniLibria.TV]" --language !num:rus --default-track !num:no --forced-track !num:no --sub-charset !num:UTF-8 ']
+                subs = [
+                    '--track-name !num:"Полные [AniLibria.TV]" --language !num:rus --default-track !num:no --forced-track !num:no --sub-charset !num:UTF-8 ']
             elif sub_default == 'Yes':
-                subs = ['--track-name !num:"Надписи [AniLibria.TV]" --language !num:rus --default-track !num:yes --forced-track !num:yes --sub-charset !num:UTF-8 ']
+                subs = [
+                    '--track-name !num:"Надписи [AniLibria.TV]" --language !num:rus --default-track !num:yes --forced-track !num:yes --sub-charset !num:UTF-8 ']
         # elif sub_count == 3:
         #     subs = '--subtitle-tracks 4,5 ' \
         #            '--track-name 4:"Надписи [AniLibria.TV]" --language 4:rus --default-track 4:yes --forced-track 4:yes --sub-charset 4:UTF-8 ' \
@@ -110,18 +114,26 @@ def fix_files(from_dir, to_dir):
         else:
             subs = ['']
         if audio_count == 1:
-            audio = ['--track-name !num:AniLibria.TV --language !num:rus --default-track !num:yes --forced-track !num:yes --sync !num:{rel1} '.format(rel1=rel[0])]
+            audio = [
+                '--track-name !num:AniLibria.TV --language !num:rus --default-track !num:yes --forced-track !num:yes --sync !num:{rel1} '.format(
+                    rel1=rel[0])]
         elif audio_count == 2:
-            audio = ['--track-name !num:AniLibria.TV --language !num:rus --default-track !num:yes --forced-track !num:yes --sync !num:{rel1} '.format(rel1=rel[0]),
-                     '--track-name !num:Original --language !num:jpn --default-track !num:no --forced-track !num:no --sync !num:{rel2} '.format(rel1=rel[0], rel2=rel[1])]
-        video = ['--track-name !num:"Original [{nickname}]" --language !num:jpn --default-track !num:yes --forced-track !num:yes '.format(nickname=nickname)]
-        params = video+audio+subs
+            audio = [
+                '--track-name !num:AniLibria.TV --language !num:rus --default-track !num:yes --forced-track !num:yes --sync !num:{rel1} '.format(
+                    rel1=rel[0]),
+                '--track-name !num:Original --language !num:jpn --default-track !num:no --forced-track !num:no --sync !num:{rel2} '.format(
+                    rel1=rel[0], rel2=rel[1])]
+        video = [
+            '--track-name !num:"Original [{nickname}]" --language !num:jpn --default-track !num:yes --forced-track !num:yes '.format(
+                nickname=nickname)]
+        params = video + audio + subs
         track_num = 0
         cmd_param = ''
         for param in params:
             cmd_param += param.replace('!num', str(track_num))
             track_num += 1
-        cmd = '"{mkvmerge}"'.format(mkvmerge=mkvmerge) + ' -o "{output}" '.format(output=to_dir + mkv.replace('].mkv', '_HEVC].mkv')) + cmd_param + '"{input}"'.format(input=from_dir + mkv)
+        cmd = '"{mkvmerge}"'.format(mkvmerge=mkvmerge) + ' -o "{output}" '.format(
+            output=to_dir + mkv.replace('].mkv', '_HEVC].mkv')) + cmd_param + '"{input}"'.format(input=from_dir + mkv)
 
         # --track-name id:string - имя потока (title)
         # --language - id:string - язык потока
@@ -137,7 +149,7 @@ def fix_files(from_dir, to_dir):
 
         process = subprocess.run(cmd, shell=True)
         if process.returncode == 0:
-            os.remove(from_dir+mkv)
+            os.remove(from_dir + mkv)
     # Если видим сообщение "Multiplexing took 4 seconds.", то всё идёт хорошо.
     return None
 
@@ -180,18 +192,19 @@ def merge_hevc(from_dir, to_dir):
                '--track-name 1:"AniLibria.TV" --language 1:rus --default-track 1:yes --forced-track 1:yes --sync 1:{rel1} ' \
                '--track-name 2:"Original" --language 2:jpn --default-track 2:no --forced-track 2:no --sync 2:{rel2} ' \
                '--no-track-tags --no-global-tags '.format(
-                                          rel1=rel[0],
-                                          rel2=rel[1])
+            rel1=rel[0],
+            rel2=rel[1])
 
         src1 = '--track-name 0:"Original [{nickname}]" --language 0:jpn --default-track 0:yes --forced-track 0:yes ' \
                '--no-track-tags --no-global-tags ' \
-               '"{from_dir}{mkv}" '.format(from_dir=from_dir+'source\\', mkv=mkv, nickname=nickname)
-        cmd = '"{mkvmerge}"'.format(mkvmerge=mkvmerge) + ' -o "{output}'.format(output=to_dir + mkv.replace('].mkv', '_HEVC].mkv" ')
-                                                                                         + src0
-                                                                                         + subs
-                                                                                         + '"{from_dir}{mkv}" '.format(from_dir=from_dir, mkv=mkv)
-                                                                                         + src1
-                                                                                         + order)
+               '"{from_dir}{mkv}" '.format(from_dir=from_dir + 'source\\', mkv=mkv, nickname=nickname)
+        cmd = '"{mkvmerge}"'.format(mkvmerge=mkvmerge) + ' -o "{output}'.format(
+            output=to_dir + mkv.replace(rename_mask_from, rename_mask_to + '"')
+                   + src0
+                   + subs
+                   + '"{from_dir}{mkv}" '.format(from_dir=from_dir, mkv=mkv)
+                   + src1
+                   + order)
         process = subprocess.run(cmd, shell=True)
         if process.returncode == 0:
             os.remove(from_dir + mkv)
