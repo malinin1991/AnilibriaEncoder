@@ -18,4 +18,5 @@ need_merge = False      # Требуется ли объединить скод�
 
 # rename_mask_from = '].mkv'
 rename_mask_from = '_[ru_jp]_[Zendos_&_Eladiel]_[BD-Rip_1080p].mkv'
+# rename_mask_to = '_HEVC].mkv'
 rename_mask_to = '_[AniLibria_TV]_[BDRip_1080p_HEVC].mkv'
