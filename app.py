@@ -133,8 +133,8 @@ def fix_files(from_dir, to_dir):
         for param in params:
             cmd_param += param.replace('!num', str(track_num))
             track_num += 1
-        cmd = '"{mkvmerge}"'.format(mkvmerge=mkvmerge) + ' -o "{output}" '.format(
-            output=to_dir + mkv.replace(rename_mask_from, rename_mask_to)) + cmd_param + '--title "" ' + '"{input}"'.format(input=from_dir + mkv)
+        cmd = '"{mkvmerge}"'.format(mkvmerge=mkvmerge) + ' -o {output} '.format(
+            output='"'+to_dir + mkv.replace(rename_mask_from, rename_mask_to))+'"' + cmd_param + '--title "" ' + '"{input}"'.format(input=from_dir + mkv)
 
         # --track-name id:string - имя потока (title)
         # --language - id:string - язык потока
@@ -199,8 +199,8 @@ def merge_hevc(from_dir, to_dir):
         src1 = '--track-name 0:"Original [{nickname}]" --language 0:jpn --default-track 0:yes --forced-track 0:yes ' \
                '--no-track-tags --no-global-tags ' \
                '"{from_dir}{mkv}" '.format(from_dir=from_dir + r'source\\', mkv=mkv, nickname=nickname)
-        cmd = '"{mkvmerge}"'.format(mkvmerge=mkvmerge) + ' -o "{output}" '.format(
-            output=to_dir + mkv.replace(rename_mask_from, rename_mask_to + '"')
+        cmd = '"{mkvmerge}"'.format(mkvmerge=mkvmerge) + ' -o {output}'.format(
+            output='"'+to_dir + mkv.replace(rename_mask_from, rename_mask_to)+'"'
                    + src0
                    + subs
                    + '"{from_dir}{mkv}" '.format(from_dir=from_dir, mkv=mkv)
@@ -208,6 +208,7 @@ def merge_hevc(from_dir, to_dir):
                    + '--title "" '
                    + order)
         process = subprocess.run(cmd, shell=True)
+        print(cmd)
         if process.returncode == 0:
             os.remove(from_dir + mkv)
     # Если видим сообщение "Multiplexing took 4 seconds.", то всё идёт хорошо.

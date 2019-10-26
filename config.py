@@ -3,7 +3,7 @@ nickname = 'GeeKaZ0iD'      # Никнейм, который будет подс
 fromdir = r'D:\AniLibria.TV\2019\Katsute Kami Datta Kemono-tachi e - AniLibria.TV [WEBRip 1080p]\\'     # Папка, из которой будем брать файлы.
 todir = r'C:\temp2\\'  # Папка, в которую будем записывать готовое.
 
-tmp_dir = r'C:\temp\\'   # Папка, в которую будут писаться временные файлы.
+tmp_dir = r'C:\tmp\\'   # Папка, в которую будут писаться временные файлы.
 # В данном случае важно экранировать слэши (\\)
 
 ffmpeg = r'C:\Program Files\ffmpeg\bin\ffmpeg.exe'  # Путь до ffmpeg.exe
