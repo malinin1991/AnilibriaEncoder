@@ -46,10 +46,11 @@ def encode_video(from_dir, to_dir, prepare_hevc, create_opus):
                            '-vf format=yuv420p10le ' \
                            '-x265-params "level=5.1:crf=23:ref=6" ' \
                            '-acodec libopus -b:a 144000 -vbr on ' \
-                           '-ac 2 -af "pan=stereo|FL=FC+0.30*FL+0.30*BL|FR=FC+0.30*FR+0.30*BR" ' \
                            '-map 0 ' \
                            '-r {rate} ' \
                            '-f matroska "{output}"'.format(input=from_dir + file, output=to_dir + file, rate=rate)
+                           # '-ac 2 ' \
+                           # '-af "pan=stereo|FL=FC+0.30*FL+0.30*BL|FR=FC+0.30*FR+0.30*BR" ' \
         else:
             ffmpeg_param = '-hide_banner ' \
                            '-i "{input}" ' \
@@ -124,7 +125,7 @@ def fix_files(from_dir, to_dir):
                 '--track-name !num:Original --language !num:jpn --default-track !num:no --forced-track !num:no --sync !num:{rel2} '.format(
                     rel1=rel[0], rel2=rel[1])]
         video = [
-            '--track-name !num:"Original [{nickname}]" --language !num:jpn --default-track !num:yes --forced-track !num:yes '.format(
+                '--track-name !num:"Original [{nickname}]" --language !num:jpn --default-track !num:yes --forced-track !num:yes '.format(
                 nickname=nickname)]
         params = video + audio + subs
         track_num = 0
@@ -133,7 +134,7 @@ def fix_files(from_dir, to_dir):
             cmd_param += param.replace('!num', str(track_num))
             track_num += 1
         cmd = '"{mkvmerge}"'.format(mkvmerge=mkvmerge) + ' -o "{output}" '.format(
-            output=to_dir + mkv.replace('].mkv', '_HEVC].mkv')) + cmd_param + '"{input}"'.format(input=from_dir + mkv)
+            output=to_dir + mkv.replace(rename_mask_from, rename_mask_to)) + cmd_param + '--title "" ' + '"{input}"'.format(input=from_dir + mkv)
 
         # --track-name id:string - имя потока (title)
         # --language - id:string - язык потока
@@ -177,18 +178,18 @@ def merge_hevc(from_dir, to_dir):
             subs = '--subtitle-tracks 4,5 ' \
                    '--track-name 4:"Надписи [AniLibria.TV]" --language 4:rus --default-track 4:yes --forced-track 4:yes --sub-charset 4:UTF-8 ' \
                    '--track-name 5:"Полные [AniLibria.TV]" --language 5:rus --default-track 5:no --forced-track 5:no --sub-charset 5:UTF-8 '
-            order = '--track-order 1:0,0:1,0:2,0:4,0:5 '
+            order = '--track-order 1:0,0:1,0:2,0:4,0:5'
         elif sub_count == 2:
             subs = '--track-name 3:"Надписи [AniLibria.TV]" --language 3:rus --default-track 3:yes --forced-track 3:yes --sub-charset 3:UTF-8 ' \
                    '--track-name 4:"Полные [AniLibria.TV]" --language 4:rus --default-track 4:no --forced-track 4:no --sub-charset 4:UTF-8 '
-            order = '--track-order 1:0,0:1,0:2,0:3,0:4 '
+            order = '--track-order 1:0,0:1,0:2,0:3,0:4'
         elif sub_count == 1:
             subs = '--track-name 3:"Полные [AniLibria.TV]" --language 3:rus --default-track 3:no --forced-track 3:no --sub-charset 3:UTF-8 '
-            order = '--track-order 1:0,0:1,0:2,0:3 '
+            order = '--track-order 1:0,0:1,0:2,0:3'
         else:
             subs = ''
-            order = '--track-order 1:0,0:1,0:2 '
-        src0 = '--no-video ' \
+            order = '--track-order 1:0,0:1,0:2'
+        src0 = ' --no-video ' \
                '--track-name 1:"AniLibria.TV" --language 1:rus --default-track 1:yes --forced-track 1:yes --sync 1:{rel1} ' \
                '--track-name 2:"Original" --language 2:jpn --default-track 2:no --forced-track 2:no --sync 2:{rel2} ' \
                '--no-track-tags --no-global-tags '.format(
@@ -197,13 +198,14 @@ def merge_hevc(from_dir, to_dir):
 
         src1 = '--track-name 0:"Original [{nickname}]" --language 0:jpn --default-track 0:yes --forced-track 0:yes ' \
                '--no-track-tags --no-global-tags ' \
-               '"{from_dir}{mkv}" '.format(from_dir=from_dir + 'source\\', mkv=mkv, nickname=nickname)
-        cmd = '"{mkvmerge}"'.format(mkvmerge=mkvmerge) + ' -o "{output}'.format(
+               '"{from_dir}{mkv}" '.format(from_dir=from_dir + r'source\\', mkv=mkv, nickname=nickname)
+        cmd = '"{mkvmerge}"'.format(mkvmerge=mkvmerge) + ' -o "{output}" '.format(
             output=to_dir + mkv.replace(rename_mask_from, rename_mask_to + '"')
                    + src0
                    + subs
                    + '"{from_dir}{mkv}" '.format(from_dir=from_dir, mkv=mkv)
                    + src1
+                   + '--title "" '
                    + order)
         process = subprocess.run(cmd, shell=True)
         if process.returncode == 0:
