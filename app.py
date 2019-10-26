@@ -208,7 +208,7 @@ def merge_hevc(from_dir, to_dir):
                    + '--title "" '
                    + order)
         process = subprocess.run(cmd, shell=True)
-        print(cmd)
+        # print(cmd)
         if process.returncode == 0:
             os.remove(from_dir + mkv)
     # Если видим сообщение "Multiplexing took 4 seconds.", то всё идёт хорошо.
