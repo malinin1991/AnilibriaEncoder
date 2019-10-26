@@ -133,8 +133,7 @@ def fix_files(from_dir, to_dir):
         for param in params:
             cmd_param += param.replace('!num', str(track_num))
             track_num += 1
-        cmd = '"{mkvmerge}"'.format(mkvmerge=mkvmerge) + ' -o {output} '.format(
-            output='"'+to_dir + mkv.replace(rename_mask_from, rename_mask_to))+'"' + cmd_param + '--title "" ' + '"{input}"'.format(input=from_dir + mkv)
+        cmd = '"{mkvmerge}"'.format(mkvmerge=mkvmerge) + ' -o {output} '.format(output='"'+to_dir + mkv.replace(rename_mask_from, rename_mask_to))+'"' + cmd_param + '--title "" ' + '"{input}"'.format(input=from_dir + mkv)
 
         # --track-name id:string - имя потока (title)
         # --language - id:string - язык потока
@@ -169,48 +168,54 @@ def merge_hevc(from_dir, to_dir):
         rel = []  # Сюда будем складывать задержку аудио
         sub_count = 0
         media_info = MediaInfo.parse(from_dir + mkv)  # Получаем информацию о конкретном файле
+        audio_count = 0
         for track in media_info.tracks:
             if track.track_type == 'Audio':  # Берём только аудио
                 rel.append(-track.delay_relative_to_video)  # Берём значение задержки и меняем её знак
+                audio_count += 1
             if track.track_type == 'Text':
                 sub_count += 1
+                sub_default = track.default
         if sub_count == 3:
-            subs = '--subtitle-tracks 4,5 ' \
-                   '--track-name 4:"Надписи [AniLibria.TV]" --language 4:rus --default-track 4:yes --forced-track 4:yes --sub-charset 4:UTF-8 ' \
-                   '--track-name 5:"Полные [AniLibria.TV]" --language 5:rus --default-track 5:no --forced-track 5:no --sub-charset 5:UTF-8 '
-            order = '--track-order 1:0,0:1,0:2,0:4,0:5'
+            subs = ['--subtitle-tracks 4,5 ',
+                    '--track-name 4:"Надписи [AniLibria.TV]" --language 4:rus --default-track 4:yes --forced-track 4:yes --sub-charset 4:UTF-8 ',
+                    '--track-name 5:"Полные [AniLibria.TV]" --language 5:rus --default-track 5:no --forced-track 5:no --sub-charset 5:UTF-8 ']
+            order = ['--track-order 1:0,0:1,0:2,0:4,0:5 ']
         elif sub_count == 2:
-            subs = '--track-name 3:"Надписи [AniLibria.TV]" --language 3:rus --default-track 3:yes --forced-track 3:yes --sub-charset 3:UTF-8 ' \
-                   '--track-name 4:"Полные [AniLibria.TV]" --language 4:rus --default-track 4:no --forced-track 4:no --sub-charset 4:UTF-8 '
-            order = '--track-order 1:0,0:1,0:2,0:3,0:4'
+            subs = ['--track-name 3:"Надписи [AniLibria.TV]" --language 3:rus --default-track 3:yes --forced-track 3:yes --sub-charset 3:UTF-8 ',
+                   '--track-name 4:"Полные [AniLibria.TV]" --language 4:rus --default-track 4:no --forced-track 4:no --sub-charset 4:UTF-8 ']
+            order = ['--track-order 1:0,0:1,0:2,0:3,0:4 ']
         elif sub_count == 1:
-            subs = '--track-name 3:"Полные [AniLibria.TV]" --language 3:rus --default-track 3:no --forced-track 3:no --sub-charset 3:UTF-8 '
-            order = '--track-order 1:0,0:1,0:2,0:3'
+            if sub_default == 'No':
+                subs = ['--track-name !num:"Полные [AniLibria.TV]" --language !num:rus --default-track !num:no --forced-track !num:no --sub-charset !num:UTF-8 ']
+            elif sub_default == 'Yes':
+                subs = ['--track-name !num:"Надписи [AniLibria.TV]" --language !num:rus --default-track !num:yes --forced-track !num:yes --sub-charset !num:UTF-8 ']
+            order = ['--track-order 1:0,0:1,0:2,0:3 ']
         else:
-            subs = ''
-            order = '--track-order 1:0,0:1,0:2'
-        src0 = ' --no-video ' \
-               '--track-name 1:"AniLibria.TV" --language 1:rus --default-track 1:yes --forced-track 1:yes --sync 1:{rel1} ' \
-               '--track-name 2:"Original" --language 2:jpn --default-track 2:no --forced-track 2:no --sync 2:{rel2} ' \
-               '--no-track-tags --no-global-tags '.format(
-            rel1=rel[0],
-            rel2=rel[1])
+            subs = ['']
+            order = ['--track-order 1:0,0:1,0:2 ']
+        if audio_count == 1:
+            audio = ['--track-name !num:AniLibria.TV --language !num:rus --default-track !num:yes --forced-track !num:yes --sync !num:{rel1} '.format(rel1=rel[0])]
+        elif audio_count == 2:
+            audio = ['--track-name !num:AniLibria.TV --language !num:rus --default-track !num:yes --forced-track !num:yes --sync !num:{rel1} '.format(rel1=rel[0]),
+                     '--track-name !num:Original --language !num:jpn --default-track !num:no --forced-track !num:no --sync !num:{rel2} '.format(rel2=rel[1])]
+        video = [' --no-video ']
+        source1 = ['"{input}" '.format(input=from_dir + mkv)]
 
-        src1 = '--track-name 0:"Original [{nickname}]" --language 0:jpn --default-track 0:yes --forced-track 0:yes ' \
-               '--no-track-tags --no-global-tags ' \
-               '"{from_dir}{mkv}" '.format(from_dir=from_dir + r'source\\', mkv=mkv, nickname=nickname)
-        cmd = '"{mkvmerge}"'.format(mkvmerge=mkvmerge) + ' -o {output}'.format(
-            output='"'+to_dir + mkv.replace(rename_mask_from, rename_mask_to)+'"'
-                   + src0
-                   + subs
-                   + '"{from_dir}{mkv}" '.format(from_dir=from_dir, mkv=mkv)
-                   + src1
-                   + '--title "" '
-                   + order)
+        video2 = ['--track-name 0:"Original [{nickname}]" --language 0:jpn --default-track 0:yes --forced-track 0:yes "{from_dir}{mkv}" '.format(from_dir=from_dir + r'source\\', mkv=mkv, nickname=nickname)]
+        tags = ['--no-track-tags --no-global-tags ']
+        params = video + audio + subs +source1 + video2 + tags + order
+        track_num = 0
+        cmd_param = ''
+        for param in params:
+            cmd_param += param.replace('!num', str(track_num))
+            track_num += 1
+        cmd = '"{mkvmerge}"'.format(mkvmerge=mkvmerge) + ' -o {output} '.format(output='"' + to_dir + mkv.replace(rename_mask_from, rename_mask_to)) + '"' + cmd_param
         process = subprocess.run(cmd, shell=True)
-        # print(cmd)
         if process.returncode == 0:
             os.remove(from_dir + mkv)
+        else:
+            print(cmd)
     # Если видим сообщение "Multiplexing took 4 seconds.", то всё идёт хорошо.
     return None
 
