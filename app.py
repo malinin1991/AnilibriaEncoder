@@ -133,8 +133,8 @@ def fix_files(from_dir, to_dir):
         for param in params:
             cmd_param += param.replace('!num', str(track_num))
             track_num += 1
-        cmd = '"{mkvmerge}"'.format(mkvmerge=mkvmerge) + ' -o {output} '.format(output='"'+to_dir + mkv.replace(rename_mask_from, rename_mask_to))+'"' + cmd_param + '--title "" ' + '"{input}"'.format(input=from_dir + mkv)
-
+        cmd = '"{mkvmerge}"'.format(mkvmerge=mkvmerge) + ' -o {output}'.format(output='"'+to_dir + mkv.replace(rename_mask_from, rename_mask_to))+'" ' + cmd_param + ' --title "" ' + '"{input}"'.format(input=from_dir + mkv)
+        print(cmd)
         # --track-name id:string - имя потока (title)
         # --language - id:string - язык потока
         # --default-track - id:boolean (yes/no) - флаг "по умолчанию" для потока
