@@ -45,7 +45,7 @@ def encode_video(from_dir, to_dir, prepare_hevc, create_opus):
                            '-c:v libx265 ' \
                            '-vf format=yuv420p10le ' \
                            '-x265-params "level=5.1:crf=23:ref=6" ' \
-                           '-acodec libopus -b:a 144000 -vbr on ' \
+                           '-acodec libopus -b:a 160000 -vbr on ' \
                            '-map 0 ' \
                            '-r {rate} ' \
                            '-f matroska "{output}"'.format(input=from_dir + file, output=to_dir + file, rate=rate)
@@ -77,14 +77,16 @@ def fix_files(from_dir, to_dir):
     mkvs = filter(lambda x: x.endswith('.mkv'), files)
     for mkv in mkvs:
         del_tags(from_dir + mkv)  # Удаляем теги
-        rel = []  # Сюда будем складывать задержку аудио
+        rel = {}  # Сюда будем складывать задержку аудио
         sub_count = 0
         audio_count = 0
         sub_default = None
         media_info = MediaInfo.parse(from_dir + mkv)  # Получаем информацию о конкретном файле
         for track in media_info.tracks:
             if track.track_type == 'Audio':  # Берём только аудио
-                rel.append(-track.delay_relative_to_video)  # Берём значение задержки и меняем её знак
+                rel[track.track_id] = -track.delay_relative_to_video
+                # rel.append(-track.delay_relative_to_video)  # Берём значение задержки и меняем её знак
+                # audio_num.append(track.track_id)
                 audio_count += 1
             if track.track_type == 'Text':
                 sub_count += 1
@@ -116,22 +118,20 @@ def fix_files(from_dir, to_dir):
             subs = ['']
         if audio_count == 1:
             audio = [
-                '--track-name !num:AniLibria.TV --language !num:rus --default-track !num:yes --forced-track !num:yes --sync !num:{rel1} '.format(
-                    rel1=rel[0])]
+                '--track-name !num:AniLibria.TV --language !num:rus --default-track !num:yes --forced-track !num:yes --sync !num:!rel ']
         elif audio_count == 2:
             audio = [
-                '--track-name !num:AniLibria.TV --language !num:rus --default-track !num:yes --forced-track !num:yes --sync !num:{rel1} '.format(
-                    rel1=rel[0]),
-                '--track-name !num:Original --language !num:jpn --default-track !num:no --forced-track !num:no --sync !num:{rel2} '.format(
-                    rel1=rel[0], rel2=rel[1])]
+                '--track-name !num:AniLibria.TV --language !num:rus --default-track !num:yes --forced-track !num:yes --sync !num:!rel ',
+                '--track-name !num:Original --language !num:jpn --default-track !num:no --forced-track !num:no --sync !num:!rel ']
         video = [
                 '--track-name !num:"Original [{nickname}]" --language !num:jpn --default-track !num:yes --forced-track !num:yes '.format(
                 nickname=nickname)]
-        params = video + audio + subs
+        tags = ['--no-track-tags --no-global-tags ']
+        params = video + audio + subs + tags
         track_num = 0
         cmd_param = ''
         for param in params:
-            cmd_param += param.replace('!num', str(track_num))
+            cmd_param += param.replace('!num', str(track_num)).replace('!rel', str(rel.get(track_num+1)))
             track_num += 1
         cmd = '"{mkvmerge}"'.format(mkvmerge=mkvmerge) + ' -o {output}'.format(output='"'+to_dir + mkv.replace(rename_mask_from, rename_mask_to))+'" ' + cmd_param + ' --title "" ' + '"{input}"'.format(input=from_dir + mkv)
         print(cmd)
@@ -165,13 +165,13 @@ def merge_hevc(from_dir, to_dir):
         if mkv[0] == 'o':
             continue
         del_tags(from_dir + mkv)  # Удаляем теги
-        rel = []  # Сюда будем складывать задержку аудио
+        rel = {}  # Сюда будем складывать задержку аудио
         sub_count = 0
         media_info = MediaInfo.parse(from_dir + mkv)  # Получаем информацию о конкретном файле
         audio_count = 0
         for track in media_info.tracks:
             if track.track_type == 'Audio':  # Берём только аудио
-                rel.append(-track.delay_relative_to_video)  # Берём значение задержки и меняем её знак
+                rel[track.track_id] = -track.delay_relative_to_video  # Берём значение задержки и меняем её знак
                 audio_count += 1
             if track.track_type == 'Text':
                 sub_count += 1
@@ -195,10 +195,10 @@ def merge_hevc(from_dir, to_dir):
             subs = ['']
             order = ['--track-order 1:0,0:1,0:2 ']
         if audio_count == 1:
-            audio = ['--track-name !num:AniLibria.TV --language !num:rus --default-track !num:yes --forced-track !num:yes --sync !num:{rel1} '.format(rel1=rel[0])]
+            audio = ['--track-name !num:AniLibria.TV --language !num:rus --default-track !num:yes --forced-track !num:yes --sync !num:!rel ']
         elif audio_count == 2:
-            audio = ['--track-name !num:AniLibria.TV --language !num:rus --default-track !num:yes --forced-track !num:yes --sync !num:{rel1} '.format(rel1=rel[0]),
-                     '--track-name !num:Original --language !num:jpn --default-track !num:no --forced-track !num:no --sync !num:{rel2} '.format(rel2=rel[1])]
+            audio = ['--track-name !num:AniLibria.TV --language !num:rus --default-track !num:yes --forced-track !num:yes --sync !num:!rel ',
+                     '--track-name !num:Original --language !num:jpn --default-track !num:no --forced-track !num:no --sync !num:!rel ']
         video = [' --no-video ']
         source1 = ['"{input}" '.format(input=from_dir + mkv)]
 
@@ -208,7 +208,7 @@ def merge_hevc(from_dir, to_dir):
         track_num = 0
         cmd_param = ''
         for param in params:
-            cmd_param += param.replace('!num', str(track_num))
+            cmd_param += param.replace('!num', str(track_num)).replace('!rel', str(rel.get(track_num+1)))
             track_num += 1
         cmd = '"{mkvmerge}"'.format(mkvmerge=mkvmerge) + ' -o {output} '.format(output='"' + to_dir + mkv.replace(rename_mask_from, rename_mask_to)) + '"' + cmd_param
         process = subprocess.run(cmd, shell=True)
