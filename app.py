@@ -101,15 +101,15 @@ def fix_files(from_dir, to_dir):
         # Переменная cmd - это строка, которую мы потом передадим в subprocess.
         if sub_count == 2:
             subs = [
-                '--track-name !num:"Надписи [AniLibria.TV]" --language !num:rus --default-track !num:yes --forced-track !num:yes --sub-charset !num:UTF-8 ',
-                '--track-name !num:"Полные [AniLibria.TV]" --language !num:rus --default-track !num:no --forced-track !num:no --sub-charset !num:UTF-8 ']
+                '--track-name !num:"Надписи" --language !num:rus --default-track !num:yes --forced-track !num:yes --sub-charset !num:UTF-8 ',
+                '--track-name !num:"Полные" --language !num:rus --default-track !num:no --forced-track !num:no --sub-charset !num:UTF-8 ']
         elif sub_count == 1:
             if sub_default == 'No':
                 subs = [
-                    '--track-name !num:"Полные [AniLibria.TV]" --language !num:rus --default-track !num:no --forced-track !num:no --sub-charset !num:UTF-8 ']
+                    '--track-name !num:"Полные" --language !num:rus --default-track !num:no --forced-track !num:no --sub-charset !num:UTF-8 ']
             elif sub_default == 'Yes':
                 subs = [
-                    '--track-name !num:"Надписи [AniLibria.TV]" --language !num:rus --default-track !num:yes --forced-track !num:yes --sub-charset !num:UTF-8 ']
+                    '--track-name !num:"Надписи" --language !num:rus --default-track !num:yes --forced-track !num:yes --sub-charset !num:UTF-8 ']
         # elif sub_count == 3:
         #     subs = '--subtitle-tracks 4,5 ' \
         #            '--track-name 4:"Надписи [AniLibria.TV]" --language 4:rus --default-track 4:yes --forced-track 4:yes --sub-charset 4:UTF-8 ' \
@@ -178,18 +178,18 @@ def merge_hevc(from_dir, to_dir):
                 sub_default = track.default
         if sub_count == 3:
             subs = ['--subtitle-tracks 4,5 ',
-                    '--track-name 4:"Надписи [AniLibria.TV]" --language 4:rus --default-track 4:yes --forced-track 4:yes --sub-charset 4:UTF-8 ',
-                    '--track-name 5:"Полные [AniLibria.TV]" --language 5:rus --default-track 5:no --forced-track 5:no --sub-charset 5:UTF-8 ']
+                    '--track-name 4:"Надписи" --language 4:rus --default-track 4:yes --forced-track 4:yes --sub-charset 4:UTF-8 ',
+                    '--track-name 5:"Полные" --language 5:rus --default-track 5:no --forced-track 5:no --sub-charset 5:UTF-8 ']
             order = ['--track-order 1:0,0:1,0:2,0:4,0:5 ']
         elif sub_count == 2:
-            subs = ['--track-name 3:"Надписи [AniLibria.TV]" --language 3:rus --default-track 3:yes --forced-track 3:yes --sub-charset 3:UTF-8 ',
-                   '--track-name 4:"Полные [AniLibria.TV]" --language 4:rus --default-track 4:no --forced-track 4:no --sub-charset 4:UTF-8 ']
+            subs = ['--track-name 3:"Надписи" --language 3:rus --default-track 3:yes --forced-track 3:yes --sub-charset 3:UTF-8 ',
+                   '--track-name 4:"Полные" --language 4:rus --default-track 4:no --forced-track 4:no --sub-charset 4:UTF-8 ']
             order = ['--track-order 1:0,0:1,0:2,0:3,0:4 ']
         elif sub_count == 1:
             if sub_default == 'No':
-                subs = ['--track-name !num:"Полные [AniLibria.TV]" --language !num:rus --default-track !num:no --forced-track !num:no --sub-charset !num:UTF-8 ']
+                subs = ['--track-name !num:"Полные" --language !num:rus --default-track !num:no --forced-track !num:no --sub-charset !num:UTF-8 ']
             elif sub_default == 'Yes':
-                subs = ['--track-name !num:"Надписи [AniLibria.TV]" --language !num:rus --default-track !num:yes --forced-track !num:yes --sub-charset !num:UTF-8 ']
+                subs = ['--track-name !num:"Надписи" --language !num:rus --default-track !num:yes --forced-track !num:yes --sub-charset !num:UTF-8 ']
             order = ['--track-order 1:0,0:1,0:2,0:3 ']
         else:
             subs = ['']
