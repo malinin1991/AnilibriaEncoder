@@ -85,8 +85,6 @@ def fix_files(from_dir, to_dir):
         for track in media_info.tracks:
             if track.track_type == 'Audio':  # Берём только аудио
                 rel[track.track_id] = -track.delay_relative_to_video
-                # rel.append(-track.delay_relative_to_video)  # Берём значение задержки и меняем её знак
-                # audio_num.append(track.track_id)
                 audio_count += 1
             if track.track_type == 'Text':
                 sub_count += 1
