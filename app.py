@@ -39,18 +39,30 @@ def encode_video(from_dir, to_dir, prepare_hevc, create_opus):
                            '-f matroska "{output}"'.format(input=from_dir + file, output=to_dir + 'source\\' + file,
                                                            rate=rate)
         elif create_opus:
-            ffmpeg_param = '-hide_banner ' \
-                           '-i "{input}" ' \
-                           '-preset medium ' \
-                           '-c:v libx265 ' \
-                           '-vf format=yuv420p10le ' \
-                           '-x265-params "level=5.1:crf=23:ref=6" ' \
-                           '-acodec libopus -b:a 160000 -vbr on ' \
-                           '-map 0 ' \
-                           '-r {rate} ' \
-                           '-f matroska "{output}"'.format(input=from_dir + file, output=to_dir + file, rate=rate)
-                           # '-ac 2 ' \
-                           # '-af "pan=stereo|FL=FC+0.30*FL+0.30*BL|FR=FC+0.30*FR+0.30*BR" ' \
+            if is51:
+                ffmpeg_param = '-hide_banner ' \
+                               '-i "{input}" ' \
+                               '-preset medium ' \
+                               '-c:v libx265 ' \
+                               '-c:a libopus -b:a 160000 -vbr on ' \
+                               '-vf format=yuv420p10le ' \
+                               '-af "pan=stereo|FL < 1.0*FL + 0.707*FC + 0.707*BL|FR < 1.0*FR + 0.707*FC + 0.707*BR" ' \
+                               '-x265-params "level=5.1:crf=23:ref=6" ' \
+                               '-map 0 ' \
+                               '-r {rate} ' \
+                               '-f matroska "{output}"'.format(input=from_dir + file, output=to_dir + file, rate=rate)
+            else:
+                ffmpeg_param = '-hide_banner ' \
+                               '-i "{input}" ' \
+                               '-preset medium ' \
+                               '-c:v libx265 ' \
+                               '-vf format=yuv420p10le ' \
+                               '-x265-params "level=5.1:crf=23:ref=6" ' \
+                               '-acodec libopus -b:a 160000 -vbr on ' \
+                               '-map 0 ' \
+                               '-r {rate} ' \
+                               '-f matroska "{output}"'.format(input=from_dir + file, output=to_dir + file, rate=rate)
+
         else:
             ffmpeg_param = '-hide_banner ' \
                            '-i "{input}" ' \
@@ -120,10 +132,9 @@ def fix_files(from_dir, to_dir):
         elif audio_count == 2:
             audio = [
                 '--track-name !num:AniLibria.TV --language !num:rus --default-track !num:yes --forced-track !num:yes --sync !num:!rel ',
-                '--track-name !num:Original --language !num:jpn --default-track !num:no --forced-track !num:no --sync !num:!rel ']
-        video = [
-                '--track-name !num:"Original [{nickname}]" --language !num:jpn --default-track !num:yes --forced-track !num:yes '.format(
-                nickname=nickname)]
+                '--track-name !num:Original --language !num:{lang} --default-track !num:no --forced-track !num:no --sync !num:!rel '.format(lang=lang)]
+        video = ['--track-name !num:"Original [{nickname}]" --language !num:{lang} --default-track !num:yes --forced-track !num:yes '.format(
+                nickname=nickname, lang=lang)]
         tags = ['--no-track-tags --no-global-tags ']
         params = video + audio + subs + tags
         track_num = 0
@@ -196,11 +207,11 @@ def merge_hevc(from_dir, to_dir):
             audio = ['--track-name !num:AniLibria.TV --language !num:rus --default-track !num:yes --forced-track !num:yes --sync !num:!rel ']
         elif audio_count == 2:
             audio = ['--track-name !num:AniLibria.TV --language !num:rus --default-track !num:yes --forced-track !num:yes --sync !num:!rel ',
-                     '--track-name !num:Original --language !num:jpn --default-track !num:no --forced-track !num:no --sync !num:!rel ']
+                '--track-name !num:Original --language !num:{lang} --default-track !num:no --forced-track !num:no --sync !num:!rel '.format(lang=lang)]
         video = [' --no-video ']
         source1 = ['"{input}" '.format(input=from_dir + mkv)]
 
-        video2 = ['--track-name 0:"Original [{nickname}]" --language 0:jpn --default-track 0:yes --forced-track 0:yes "{from_dir}{mkv}" '.format(from_dir=from_dir + r'source\\', mkv=mkv, nickname=nickname)]
+        video2 = ['--track-name 0:"Original [{nickname}]" --language 0:{lang} --default-track 0:yes --forced-track 0:yes "{from_dir}{mkv}" '.format(from_dir=from_dir + r'source\\', mkv=mkv, nickname=nickname, lang=lang)]
         tags = ['--no-track-tags --no-global-tags ']
         params = video + audio + subs +source1 + video2 + tags + order
         track_num = 0
