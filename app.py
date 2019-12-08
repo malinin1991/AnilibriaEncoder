@@ -130,9 +130,14 @@ def fix_files(from_dir, to_dir):
             audio = [
                 '--track-name !num:AniLibria.TV --language !num:rus --default-track !num:yes --forced-track !num:yes --sync !num:!rel ']
         elif audio_count == 2:
-            audio = [
-                '--track-name !num:AniLibria.TV --language !num:rus --default-track !num:yes --forced-track !num:yes --sync !num:!rel ',
-                '--track-name !num:Original --language !num:{lang} --default-track !num:no --forced-track !num:no --sync !num:!rel '.format(lang=lang)]
+            if create_opus:
+                audio = ['--track-name !num:AniLibria.TV --language !num:rus --default-track !num:yes --forced-track !num:yes --sync !num:!rel ',
+                '--track-name !num:Original [{nick}] --language !num:{lang} --default-track !num:no --forced-track !num:no --sync !num:!rel '.format(
+                    lang=lang, nick=nickname)]
+            else:
+                audio = [
+                    '--track-name !num:AniLibria.TV --language !num:rus --default-track !num:yes --forced-track !num:yes --sync !num:!rel ',
+                    '--track-name !num:Original --language !num:{lang} --default-track !num:no --forced-track !num:no --sync !num:!rel '.format(lang=lang)]
         video = ['--track-name !num:"Original [{nickname}]" --language !num:{lang} --default-track !num:yes --forced-track !num:yes '.format(
                 nickname=nickname, lang=lang)]
         tags = ['--no-track-tags --no-global-tags ']
@@ -206,8 +211,12 @@ def merge_hevc(from_dir, to_dir):
         if audio_count == 1:
             audio = ['--track-name !num:AniLibria.TV --language !num:rus --default-track !num:yes --forced-track !num:yes --sync !num:!rel ']
         elif audio_count == 2:
-            audio = ['--track-name !num:AniLibria.TV --language !num:rus --default-track !num:yes --forced-track !num:yes --sync !num:!rel ',
-                '--track-name !num:Original --language !num:{lang} --default-track !num:no --forced-track !num:no --sync !num:!rel '.format(lang=lang)]
+            if create_opus:
+                audio = ['--track-name !num:AniLibria.TV --language !num:rus --default-track !num:yes --forced-track !num:yes --sync !num:!rel ',
+                    '--track-name !num:Original [{nick}] --language !num:{lang} --default-track !num:no --forced-track !num:no --sync !num:!rel '.format(lang=lang, nick=nickname)]
+            else:
+                audio = ['--track-name !num:AniLibria.TV --language !num:rus --default-track !num:yes --forced-track !num:yes --sync !num:!rel ',
+                    '--track-name !num:Original --language !num:{lang} --default-track !num:no --forced-track !num:no --sync !num:!rel '.format(lang=lang)]
         video = [' --no-video ']
         source1 = ['"{input}" '.format(input=from_dir + mkv)]
 
