@@ -1,23 +1,16 @@
-nickname = 'HorribleSubs'      # Никнейм, который будет подставлен, как автор дорожки
-
-fromdir = r'D:\AniLibria.TV\2017\Black Clover - AniLibria.TV [WEBRip 1080p]\\'     # Папка, из которой будем брать файлы.
-todir = r'C:\Black Clover - AniLibria.TV [WEBRip 1080p]\\'  # Папка, в которую будем записывать готовое.
-
-tmp_dir = r'D:\AniLibria.TV\2017\Black Clover - AniLibria.TV [WEBRip 1080p]\\'   # Папка, в которую будут писаться временные файлы.
-# В данном случае важно экранировать слэши (\\)
-
-ffmpeg = r'C:\Program Files\ffmpeg\bin\ffmpeg.exe'  # Путь до ffmpeg.exe
-mkvpropedit = r'C:\Program Files\MKVToolNix\mkvpropedit.exe'     # Путь к mkvpropedit.exe
-mkvmerge = r'C:\Program Files\MKVToolNix\mkvmerge.exe'   # Путь к mkvmerge.exe
-
-need_encode = False      # Требуется ли кодирование видео?
-need_fix = True        # Требуется ли исправление дорожжек и переименовывание
-create_opus = False      # Требуется ли сделать аудио opus
-prepare = False         # Необходимо ли подготовить файлы без звука. Только видеодорожка.
-
-need_merge = False      # Требуется ли объединить скодированную заранее видеодорожку с готовым релизом от технарей?
-
-rename_mask_from = 'Black_Clover_[7'
-rename_mask_to = 'Black_Clover_[07'
-is51 = False
+suffix = ''    # Никнейм, который будет подставлен, как автор дорожки
+fromdir = r'C:\source\\'
+todir = r'C:\source\\'
+need_encode = True      # Видео будет скодировано
+need_fix = False        # Дорожки не будут исправлены и переименованы
+create_opus = False      # opus не нужен
+prepare = True          # Будут подготовлены файлы без звука. Только видеодорожка.
+need_merge = False             # Собираем матрешку в штатном режиме
+is51 = False     #Будет подготовлен звук из дорожки 2.0
+tmp_dir = r'C:\temp\\'
+ffmpeg = r'C:\Program Files\ffmpeg\bin\ffmpeg.exe'
+mkvpropedit = r'C:\Program Files\MKVToolNix\mkvpropedit.exe'
+mkvmerge = r'C:\Program Files\MKVToolNix\mkvmerge.exe'
+rename_mask_from = '].mkv'
+rename_mask_to = '_HEVC].mkv'
 lang = 'jpn'

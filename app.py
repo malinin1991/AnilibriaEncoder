@@ -132,14 +132,14 @@ def fix_files(from_dir, to_dir):
         elif audio_count == 2:
             if create_opus:
                 audio = ['--track-name !num:AniLibria.TV --language !num:rus --default-track !num:yes --forced-track !num:yes --sync !num:!rel ',
-                '--track-name !num:Original [{nick}] --language !num:{lang} --default-track !num:no --forced-track !num:no --sync !num:!rel '.format(
-                    lang=lang, nick=nickname)]
+                '--track-name !num:"Original{nick}" --language !num:{lang} --default-track !num:no --forced-track !num:no --sync !num:!rel '.format(
+                    lang=lang, nick=suffix)]
             else:
                 audio = [
                     '--track-name !num:AniLibria.TV --language !num:rus --default-track !num:yes --forced-track !num:yes --sync !num:!rel ',
                     '--track-name !num:Original --language !num:{lang} --default-track !num:no --forced-track !num:no --sync !num:!rel '.format(lang=lang)]
-        video = ['--track-name !num:"Original [{nickname}]" --language !num:{lang} --default-track !num:yes --forced-track !num:yes '.format(
-                nickname=nickname, lang=lang)]
+        video = ['--track-name !num:"Original {nickname}" --language !num:{lang} --default-track !num:yes --forced-track !num:yes '.format(
+                nickname=suffix, lang=lang)]
         tags = ['--no-track-tags --no-global-tags ']
         params = video + audio + subs + tags
         track_num = 0
@@ -213,14 +213,14 @@ def merge_hevc(from_dir, to_dir):
         elif audio_count == 2:
             if create_opus:
                 audio = ['--track-name !num:AniLibria.TV --language !num:rus --default-track !num:yes --forced-track !num:yes --sync !num:!rel ',
-                    '--track-name !num:Original [{nick}] --language !num:{lang} --default-track !num:no --forced-track !num:no --sync !num:!rel '.format(lang=lang, nick=nickname)]
+                    '--track-name !num:"Original{nick}" --language !num:{lang} --default-track !num:no --forced-track !num:no --sync !num:!rel '.format(lang=lang, nick=suffix)]
             else:
                 audio = ['--track-name !num:AniLibria.TV --language !num:rus --default-track !num:yes --forced-track !num:yes --sync !num:!rel ',
                     '--track-name !num:Original --language !num:{lang} --default-track !num:no --forced-track !num:no --sync !num:!rel '.format(lang=lang)]
         video = [' --no-video ']
         source1 = ['"{input}" '.format(input=from_dir + mkv)]
 
-        video2 = ['--track-name 0:"Original [{nickname}]" --language 0:{lang} --default-track 0:yes --forced-track 0:yes "{from_dir}{mkv}" '.format(from_dir=from_dir + r'source\\', mkv=mkv, nickname=nickname, lang=lang)]
+        video2 = ['--track-name 0:"Original {nickname}" --language 0:{lang} --default-track 0:yes --forced-track 0:yes "{from_dir}{mkv}" '.format(from_dir=from_dir + r'source\\', mkv=mkv, nickname=suffix, lang=lang)]
         tags = ['--no-track-tags --no-global-tags ']
         params = video + audio + subs +source1 + video2 + tags + order
         track_num = 0
