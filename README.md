@@ -18,7 +18,7 @@
 
 После установки открываем блокнотом (в идеале Notepad++ или что-то подобное) файл config.py и задаём параметры:
 
-`nickname = 'GeeKaZ0iD'`
+`suffix = ''`
 
 `fromdir = r'E:\2019\Kenja no Mago - AniLibria.TV [WEBRip 1080p]\\'`
 
