@@ -20,7 +20,7 @@ def smart_opus(media_info, active):
         112: '112k'
     }
     if active:
-        opus_bitrate = 160
+        opus_bitrate = smart_opus_dict[160]
         for track in media_info.tracks:
             if track.track_type == 'Audio':
                 try:
@@ -39,7 +39,7 @@ def smart_opus(media_info, active):
 
 
 def command_generator(from_dir, to_dir, del_data=False, del_subs=False,
-                      opus=True, opus_from_51=False, opus_smart_activate=False):
+                      opus=False, opus_from_51=False, opus_smart_activate=False):
     commands = []
     str_commands = []
     files = filter(lambda x: x.endswith('.mkv'), os.listdir(from_dir))
@@ -63,8 +63,8 @@ def command_generator(from_dir, to_dir, del_data=False, del_subs=False,
         if del_subs:
             command['-sn'] = ''
         if opus:
-            command['-c:a'] = 'libopus'
             command['-b:a'] = f'{smart_opus(media_info, opus_smart_activate)}'
+            command['-c:a'] = 'libopus'
             command['-vbr'] = 'on'
             if opus_from_51:
                 command['-af'] = '"pan=stereo|FL < 1.0*FL + 0.707*FC + 0.707*BL|FR < 1.0*FR + 0.707*FC + 0.707*BR"'
@@ -81,99 +81,105 @@ def command_generator(from_dir, to_dir, del_data=False, del_subs=False,
     return str_commands
 
 
+def fix_files(from_dir, to_dir, fix_delay=False):
+    if not os.path.isdir(to_dir):
+        os.makedirs(to_dir)
+    # Получаем список файлов в папке
+    files = os.listdir(from_dir)
+    # Оставляем тольео mkv
+    mkvs = filter(lambda x: x.endswith('.mkv'), files)
+    for mkv in mkvs:
+        del_tags(from_dir + mkv)  # Удаляем теги
+        rel = {}  # Сюда будем складывать задержку аудио
+        sub_count = 0
+        audio_count = 0
+        sub_default = None
+        media_info = MediaInfo.parse(from_dir + mkv)  # Получаем информацию о конкретном файле
+        for track in media_info.tracks:
+            if track.track_type == 'Audio':  # Берём только аудио
+                rel[track.track_id] = -track.delay_relative_to_video
+                audio_count += 1
+            if track.track_type == 'Text':
+                sub_count += 1
+                sub_default = track.default
+        # А дальше начинается магия. Для каждого потока в mkv прописываются свои значения.
+        # Важно, чтобы потоки шли в таком порядке:
+        # 1. Видео
+        # 2. Русская звуковая дорожка
+        # 3. Японская звуковая дорожка
+        # 4. Субтитры с надписями на русском языке
+        # 5. Полные субтитры на русском языке
+        # Переменная cmd - это строка, которую мы потом передадим в subprocess.
+        if sub_count == 2:
+            subs = [
+                '--track-name !num:"Надписи" --language !num:rus --default-track !num:yes --forced-track !num:yes --sub-charset !num:UTF-8 ',
+                '--track-name !num:"Полные" --language !num:rus --default-track !num:no --forced-track !num:no --sub-charset !num:UTF-8 ']
+        elif sub_count == 1:
+            if sub_default == 'No':
+                subs = [
+                    '--track-name !num:"Полные" --language !num:rus --default-track !num:no --forced-track !num:no --sub-charset !num:UTF-8 ']
+            elif sub_default == 'Yes':
+                subs = [
+                    '--track-name !num:"Надписи" --language !num:rus --default-track !num:yes --forced-track !num:yes --sub-charset !num:UTF-8 ']
+        else:
+            subs = ['']
+        if fix_delay:
+            if audio_count == 1:
+                audio = [
+                    '--track-name !num:AniLibria.TV --language !num:rus --default-track !num:yes --forced-track !num:yes --sync !num:!rel ']
+            elif audio_count == 2:
+                if create_opus:
+                    audio = ['--track-name !num:AniLibria.TV --language !num:rus --default-track !num:yes --forced-track !num:yes --sync !num:!rel ',
+                    '--track-name !num:"Original{nick}" --language !num:{lang} --default-track !num:no --forced-track !num:no --sync !num:!rel '.format(
+                        lang=lang, nick=suffix)]
+                else:
+                    audio = [
+                        '--track-name !num:AniLibria.TV --language !num:rus --default-track !num:yes --forced-track !num:yes --sync !num:!rel ',
+                        '--track-name !num:Original --language !num:{lang} --default-track !num:no --forced-track !num:no --sync !num:!rel '.format(lang=lang)]
+        else:
+            if audio_count == 1:
+                audio = [
+                    '--track-name !num:AniLibria.TV --language !num:rus --default-track !num:yes --forced-track !num:yes ']
+            elif audio_count == 2:
+                if create_opus:
+                    audio = ['--track-name !num:AniLibria.TV --language !num:rus --default-track !num:yes --forced-track !num:yes ',
+                    '--track-name !num:"Original{nick}" --language !num:{lang} --default-track !num:no --forced-track !num:no '.format(
+                        lang=lang, nick=suffix)]
+                else:
+                    audio = [
+                        '--track-name !num:AniLibria.TV --language !num:rus --default-track !num:yes --forced-track !num:yes ',
+                        '--track-name !num:Original --language !num:{lang} --default-track !num:no --forced-track !num:no '.format(lang=lang)]
+        video = ['--track-name !num:"Original {nickname}" --language !num:{lang} --default-track !num:yes --forced-track !num:yes '.format(
+                nickname=suffix, lang=lang)]
+        tags = ['--no-track-tags --no-global-tags ']
+        params = video + audio + subs + tags
+        track_num = 0
+        cmd_param = ''
+        for param in params:
+            cmd_param += param.replace('!num', str(track_num)).replace('!rel', str(rel.get(track_num+1)))
+            track_num += 1
+        cmd = '"{mkvmerge}"'.format(mkvmerge=mkvmerge) + ' -o {output}'.format(output='"'+to_dir + mkv.replace(rename_mask_from, rename_mask_to))+'" ' + cmd_param + ' --title "" ' + '"{input}"'.format(input=from_dir + mkv)
+        print(cmd)
+
+        process = subprocess.run(cmd, shell=True)
+        if process.returncode == 0:
+            os.remove(from_dir + mkv)
+    return None
+
+
 if not os.path.isdir(todir):
     os.makedirs(todir)
-cmds = command_generator(fromdir, todir, del_data=True, del_subs=True, opus=True, opus_smart_activate=True)
+if not os.path.isdir(tmp_dir):
+    os.makedirs(tmp_dir)
+if not os.path.isdir(f"{tmp_dir}source\\"):
+    os.makedirs(f"{tmp_dir}+source\\")
+cmds = command_generator(fromdir, tmp_dir, del_data=False, del_subs=False, opus=create_opus, opus_smart_activate=True)
 for cmd in cmds:
     process = subprocess.run(f'{cmd}', shell=True)
+if need_fix:
+    fix_files(tmp_dir, todir, delay)
 
 
-# def fix_files(from_dir, to_dir, fix_delay=False):
-#     if not os.path.isdir(to_dir):
-#         os.makedirs(to_dir)
-#     # Получаем список файлов в папке
-#     files = os.listdir(from_dir)
-#     # Оставляем тольео mkv
-#     mkvs = filter(lambda x: x.endswith('.mkv'), files)
-#     for mkv in mkvs:
-#         del_tags(from_dir + mkv)  # Удаляем теги
-#         rel = {}  # Сюда будем складывать задержку аудио
-#         sub_count = 0
-#         audio_count = 0
-#         sub_default = None
-#         media_info = MediaInfo.parse(from_dir + mkv)  # Получаем информацию о конкретном файле
-#         for track in media_info.tracks:
-#             if track.track_type == 'Audio':  # Берём только аудио
-#                 rel[track.track_id] = -track.delay_relative_to_video
-#                 audio_count += 1
-#             if track.track_type == 'Text':
-#                 sub_count += 1
-#                 sub_default = track.default
-#         # А дальше начинается магия. Для каждого потока в mkv прописываются свои значения.
-#         # Важно, чтобы потоки шли в таком порядке:
-#         # 1. Видео
-#         # 2. Русская звуковая дорожка
-#         # 3. Японская звуковая дорожка
-#         # 4. Субтитры с надписями на русском языке
-#         # 5. Полные субтитры на русском языке
-#         # Переменная cmd - это строка, которую мы потом передадим в subprocess.
-#         if sub_count == 2:
-#             subs = [
-#                 '--track-name !num:"Надписи" --language !num:rus --default-track !num:yes --forced-track !num:yes --sub-charset !num:UTF-8 ',
-#                 '--track-name !num:"Полные" --language !num:rus --default-track !num:no --forced-track !num:no --sub-charset !num:UTF-8 ']
-#         elif sub_count == 1:
-#             if sub_default == 'No':
-#                 subs = [
-#                     '--track-name !num:"Полные" --language !num:rus --default-track !num:no --forced-track !num:no --sub-charset !num:UTF-8 ']
-#             elif sub_default == 'Yes':
-#                 subs = [
-#                     '--track-name !num:"Надписи" --language !num:rus --default-track !num:yes --forced-track !num:yes --sub-charset !num:UTF-8 ']
-#         else:
-#             subs = ['']
-#         if fix_delay:
-#             if audio_count == 1:
-#                 audio = [
-#                     '--track-name !num:AniLibria.TV --language !num:rus --default-track !num:yes --forced-track !num:yes --sync !num:!rel ']
-#             elif audio_count == 2:
-#                 if create_opus:
-#                     audio = ['--track-name !num:AniLibria.TV --language !num:rus --default-track !num:yes --forced-track !num:yes --sync !num:!rel ',
-#                     '--track-name !num:"Original{nick}" --language !num:{lang} --default-track !num:no --forced-track !num:no --sync !num:!rel '.format(
-#                         lang=lang, nick=suffix)]
-#                 else:
-#                     audio = [
-#                         '--track-name !num:AniLibria.TV --language !num:rus --default-track !num:yes --forced-track !num:yes --sync !num:!rel ',
-#                         '--track-name !num:Original --language !num:{lang} --default-track !num:no --forced-track !num:no --sync !num:!rel '.format(lang=lang)]
-#         else:
-#             if audio_count == 1:
-#                 audio = [
-#                     '--track-name !num:AniLibria.TV --language !num:rus --default-track !num:yes --forced-track !num:yes ']
-#             elif audio_count == 2:
-#                 if create_opus:
-#                     audio = ['--track-name !num:AniLibria.TV --language !num:rus --default-track !num:yes --forced-track !num:yes ',
-#                     '--track-name !num:"Original{nick}" --language !num:{lang} --default-track !num:no --forced-track !num:no '.format(
-#                         lang=lang, nick=suffix)]
-#                 else:
-#                     audio = [
-#                         '--track-name !num:AniLibria.TV --language !num:rus --default-track !num:yes --forced-track !num:yes ',
-#                         '--track-name !num:Original --language !num:{lang} --default-track !num:no --forced-track !num:no '.format(lang=lang)]
-#         video = ['--track-name !num:"Original {nickname}" --language !num:{lang} --default-track !num:yes --forced-track !num:yes '.format(
-#                 nickname=suffix, lang=lang)]
-#         tags = ['--no-track-tags --no-global-tags ']
-#         params = video + audio + subs + tags
-#         track_num = 0
-#         cmd_param = ''
-#         for param in params:
-#             cmd_param += param.replace('!num', str(track_num)).replace('!rel', str(rel.get(track_num+1)))
-#             track_num += 1
-#         cmd = '"{mkvmerge}"'.format(mkvmerge=mkvmerge) + ' -o {output}'.format(output='"'+to_dir + mkv.replace(rename_mask_from, rename_mask_to))+'" ' + cmd_param + ' --title "" ' + '"{input}"'.format(input=from_dir + mkv)
-#         print(cmd)
-#
-#         process = subprocess.run(cmd, shell=True)
-#         if process.returncode == 0:
-#             os.remove(from_dir + mkv)
-#     return None
-#
-#
 # def merge_hevc(from_dir, to_dir):
 #     if not os.path.isdir(to_dir):
 #         os.makedirs(to_dir)
