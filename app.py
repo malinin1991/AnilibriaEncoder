@@ -1,6 +1,7 @@
 from pymediainfo import MediaInfo
 from config import *
 import subprocess
+import multiprocessing
 import os
 
 
@@ -129,36 +130,44 @@ def fix_files(from_dir, to_dir, fix_delay=False):
                     '--track-name !num:AniLibria.TV --language !num:rus --default-track !num:yes --forced-track !num:yes --sync !num:!rel ']
             elif audio_count == 2:
                 if create_opus:
-                    audio = ['--track-name !num:AniLibria.TV --language !num:rus --default-track !num:yes --forced-track !num:yes --sync !num:!rel ',
-                    '--track-name !num:"Original{nick}" --language !num:{lang} --default-track !num:no --forced-track !num:no --sync !num:!rel '.format(
-                        lang=lang, nick=suffix)]
+                    audio = [
+                        '--track-name !num:AniLibria.TV --language !num:rus --default-track !num:yes --forced-track !num:yes --sync !num:!rel ',
+                        '--track-name !num:"Original{nick}" --language !num:{lang} --default-track !num:no --forced-track !num:no --sync !num:!rel '.format(
+                            lang=lang, nick=suffix)]
                 else:
                     audio = [
                         '--track-name !num:AniLibria.TV --language !num:rus --default-track !num:yes --forced-track !num:yes --sync !num:!rel ',
-                        '--track-name !num:Original --language !num:{lang} --default-track !num:no --forced-track !num:no --sync !num:!rel '.format(lang=lang)]
+                        '--track-name !num:Original --language !num:{lang} --default-track !num:no --forced-track !num:no --sync !num:!rel '.format(
+                            lang=lang)]
         else:
             if audio_count == 1:
                 audio = [
                     '--track-name !num:AniLibria.TV --language !num:rus --default-track !num:yes --forced-track !num:yes ']
             elif audio_count == 2:
                 if create_opus:
-                    audio = ['--track-name !num:AniLibria.TV --language !num:rus --default-track !num:yes --forced-track !num:yes ',
-                    '--track-name !num:"Original{nick}" --language !num:{lang} --default-track !num:no --forced-track !num:no '.format(
-                        lang=lang, nick=suffix)]
+                    audio = [
+                        '--track-name !num:AniLibria.TV --language !num:rus --default-track !num:yes --forced-track !num:yes ',
+                        '--track-name !num:"Original{nick}" --language !num:{lang} --default-track !num:no --forced-track !num:no '.format(
+                            lang=lang, nick=suffix)]
                 else:
                     audio = [
                         '--track-name !num:AniLibria.TV --language !num:rus --default-track !num:yes --forced-track !num:yes ',
-                        '--track-name !num:Original --language !num:{lang} --default-track !num:no --forced-track !num:no '.format(lang=lang)]
-        video = ['--track-name !num:"Original {nickname}" --language !num:{lang} --default-track !num:yes --forced-track !num:yes '.format(
+                        '--track-name !num:Original --language !num:{lang} --default-track !num:no --forced-track !num:no '.format(
+                            lang=lang)]
+        video = [
+            '--track-name !num:"Original {nickname}" --language !num:{lang} --default-track !num:yes --forced-track !num:yes '.format(
                 nickname=suffix, lang=lang)]
         tags = ['--no-track-tags --no-global-tags ']
         params = video + audio + subs + tags
         track_num = 0
         cmd_param = ''
         for param in params:
-            cmd_param += param.replace('!num', str(track_num)).replace('!rel', str(rel.get(track_num+1)))
+            cmd_param += param.replace('!num', str(track_num)).replace('!rel', str(rel.get(track_num + 1)))
             track_num += 1
-        cmd = '"{mkvmerge}"'.format(mkvmerge=mkvmerge) + ' -o {output}'.format(output='"'+to_dir + mkv.replace(rename_mask_from, rename_mask_to))+'" ' + cmd_param + ' --title "" ' + '"{input}"'.format(input=from_dir + mkv)
+        cmd = '"{mkvmerge}"'.format(mkvmerge=mkvmerge) + ' -o {output}'.format(
+            output='"' + to_dir + mkv.replace(rename_mask_from,
+                                              rename_mask_to)) + '" ' + cmd_param + ' --title "" ' + '"{input}"'.format(
+            input=from_dir + mkv)
         print(cmd)
 
         process = subprocess.run(cmd, shell=True)
@@ -167,18 +176,31 @@ def fix_files(from_dir, to_dir, fix_delay=False):
     return None
 
 
-if not os.path.isdir(todir):
-    os.makedirs(todir)
-if not os.path.isdir(tmp_dir):
-    os.makedirs(tmp_dir)
-if not os.path.isdir(f"{tmp_dir}source\\"):
-    os.makedirs(f"{tmp_dir}+source\\")
-cmds = command_generator(fromdir, tmp_dir, del_data=False, del_subs=False, opus=create_opus, opus_smart_activate=True)
-for cmd in cmds:
-    process = subprocess.run(f'{cmd}', shell=True)
-if need_fix:
-    fix_files(tmp_dir, todir, delay)
+def create_dirs():
+    if not os.path.isdir(todir):
+        os.makedirs(todir)
+    if not os.path.isdir(tmp_dir):
+        os.makedirs(tmp_dir)
+    if not os.path.isdir(f"{tmp_dir}source\\"):
+        os.makedirs(f"{tmp_dir}source\\")
+    return None
 
+
+def worker(cmd):
+    subprocess.call(cmd, creationflags=subprocess.CREATE_NEW_CONSOLE)
+
+
+if __name__ == "__main__":
+    cmds = command_generator(fromdir, tmp_dir, del_data=False, del_subs=False, opus=create_opus,
+                             opus_smart_activate=True)
+    create_dirs()
+    # запускаю его после точки входа и никаких проблем.
+    pool = multiprocessing.Pool(processes=runners_count)
+    result = pool.map(worker, cmds)
+    pool.close()
+    pool.join()
+    if need_fix:
+        fix_files(tmp_dir, todir, delay)
 
 # def merge_hevc(from_dir, to_dir):
 #     if not os.path.isdir(to_dir):
