@@ -18,9 +18,13 @@ def smart_opus(media_info, active):
         160: '160k',
         144: '144k',
         128: '128k',
-        112: '112k'
+        112: '112k',
+        96: '96k',
+        74: '74k'
     }
     if active:
+        if create_opus_lq:
+            return smart_opus_dict[74]
         opus_bitrate = smart_opus_dict[160]
         for track in media_info.tracks:
             if track.track_type == 'Audio':
@@ -103,14 +107,6 @@ def fix_files(from_dir, to_dir, fix_delay=False):
             if track.track_type == 'Text':
                 sub_count += 1
                 sub_default = track.default
-        # А дальше начинается магия. Для каждого потока в mkv прописываются свои значения.
-        # Важно, чтобы потоки шли в таком порядке:
-        # 1. Видео
-        # 2. Русская звуковая дорожка
-        # 3. Японская звуковая дорожка
-        # 4. Субтитры с надписями на русском языке
-        # 5. Полные субтитры на русском языке
-        # Переменная cmd - это строка, которую мы потом передадим в subprocess.
         if sub_count == 2:
             subs = [
                 '--track-name !num:"Надписи" --language !num:rus --default-track !num:yes --forced-track !num:yes --sub-charset !num:UTF-8 ',
