@@ -1,17 +1,19 @@
-suffix = ''    # Суффикс после имени оригинальной дорожки
+suffix = ' [GeeKaZ0iD]'  # Суффикс после имени оригинальной дорожки
 
-fromdir = r'C:\temp\\'
-todir = r'A:\AniLibria.TV\Hot releases\\'
-tmp_dir = r'C:\tedmp\fdsdsfdsf\\'
+from_dir = r'C:\temp1\\'
+to_dir = r'Z:\Ongoing\JoJo no Kimyou na Bouken Stardust Crusaders - AniLibria.TV [BDRip 1080p HEVC]\\'
+tmp_dir = r'C:\tedmp\\'
 
+need_encode = True  # Видео будет скодировано
+need_fix = True  # Дорожки будут исправлены и переименованы
+create_opus = True  # Сейчас замутим opus
+create_opus_lq = False
+is51 = False  # Будет подготовлен звук из дорожки 2.0
+prepare = False  # Будет полностью готовый HEVC
+need_merge = False  # Собираем матрешку в штатном режиме
 
-need_encode = True      # Видео будет скодировано
-need_fix = True        # Дорожки будут исправлены и переименованы
-create_opus = True      # Сейчас замутим opus
-create_opus_lq = True
-prepare = False          # Будет полностью готовый HEVC
-need_merge = False             # Собираем матрешку в штатном режиме
-is51 = True     #Будет подготовлен звук из дорожки 2.0
+hevc_crf_level = 23  # default 23
+hevc_preset = 'medium'  # ultrafast, superfast, veryfast, faster, fast, medium, slow, slower, veryslow, placebo.
 
 ffmpeg = r'C:\Program Files\ffmpeg\bin\ffmpeg.exe'
 mkvpropedit = r'C:\Program Files\MKVToolNix\mkvpropedit.exe'
@@ -26,5 +28,4 @@ else:
 lang = 'jpn'
 delay = True
 
-
-runners_count = 3
+runners_count = 2

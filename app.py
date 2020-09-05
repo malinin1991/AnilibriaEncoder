@@ -1,9 +1,12 @@
 from pymediainfo import MediaInfo
 from config import *
+from random import choices
+from string import ascii_uppercase, digits
 import subprocess
 import multiprocessing
 import os
 
+tmp_dir += ''.join(choices(ascii_uppercase + digits, k=8))+'\\'
 
 # Удаление тегов. На вход - путь к файлу mkv.
 def del_tags(mkv):
@@ -43,7 +46,7 @@ def smart_opus(media_info, active):
     return opus_bitrate
 
 
-def command_generator(from_dir, to_dir, del_data=False, del_subs=False,
+def command_generator(del_data=False, del_subs=False,
                       opus=False, opus_from_51=False, opus_smart_activate=False):
     commands = []
     str_commands = []
@@ -58,11 +61,13 @@ def command_generator(from_dir, to_dir, del_data=False, del_subs=False,
             rate = f'{fr_num}/{fr_den}'
         command = {'-hide_banner': '',
                    '-i': f'"{from_dir + file}"',
-                   '-preset': 'medium',
                    '-c:v': 'libx265',
+                   '-preset': f'{hevc_preset}',
+                   '-crf': f'{hevc_crf_level}',
                    '-vf': '"format=yuv420p10le"',
-                   '-x265-params': '"level=5.1:crf=23:ref=6"',
+                   '-x265-params': f'"level=5.1:ref=6"',
                    '-r': f'{rate}'}
+        #'-x265-params': f'"level=5.1:crf={hevc_crf_level}:ref=6"',
         if del_data:
             command['-dn'] = ''
         if del_subs:
@@ -76,7 +81,7 @@ def command_generator(from_dir, to_dir, del_data=False, del_subs=False,
         else:
             command['-acodec'] = 'copy'
         command['-map'] = '0'
-        command['-f'] = f'matroska "{to_dir + file}"'
+        command['-f'] = f'matroska "{tmp_dir + file}"'
         commands.append(command)
     for command in commands:
         str_command = f'"{ffmpeg}" '
@@ -86,20 +91,20 @@ def command_generator(from_dir, to_dir, del_data=False, del_subs=False,
     return str_commands
 
 
-def fix_files(from_dir, to_dir, fix_delay=False):
+def fix_files(fix_delay=False):
     if not os.path.isdir(to_dir):
         os.makedirs(to_dir)
     # Получаем список файлов в папке
-    files = os.listdir(from_dir)
+    files = os.listdir(tmp_dir)
     # Оставляем тольео mkv
     mkvs = filter(lambda x: x.endswith('.mkv'), files)
     for mkv in mkvs:
-        del_tags(from_dir + mkv)  # Удаляем теги
+        del_tags(tmp_dir + mkv)  # Удаляем теги
         rel = {}  # Сюда будем складывать задержку аудио
         sub_count = 0
         audio_count = 0
         sub_default = None
-        media_info = MediaInfo.parse(from_dir + mkv)  # Получаем информацию о конкретном файле
+        media_info = MediaInfo.parse(tmp_dir + mkv)  # Получаем информацию о конкретном файле
         for track in media_info.tracks:
             if track.track_type == 'Audio':  # Берём только аудио
                 rel[track.track_id] = -track.delay_relative_to_video
@@ -153,7 +158,7 @@ def fix_files(from_dir, to_dir, fix_delay=False):
         video = [
             '--track-name !num:"Original {nickname}" --language !num:{lang} --default-track !num:yes --forced-track !num:yes '.format(
                 nickname=suffix, lang=lang)]
-        tags = ['--no-track-tags --no-global-tags ']
+        tags = ['--no-track-tags --no-global-tags --title "" ']
         params = video + audio + subs + tags
         track_num = 0
         cmd_param = ''
@@ -163,31 +168,32 @@ def fix_files(from_dir, to_dir, fix_delay=False):
         cmd = '"{mkvmerge}"'.format(mkvmerge=mkvmerge) + ' -o {output}'.format(
             output='"' + to_dir + mkv.replace(rename_mask_from,
                                               rename_mask_to)) + '" ' + cmd_param + ' --title "" ' + '"{input}"'.format(
-            input=from_dir + mkv)
+            input=tmp_dir + mkv)
         print(cmd)
 
         process = subprocess.run(cmd, shell=True)
         if process.returncode == 0:
-            os.remove(from_dir + mkv)
+            os.remove(tmp_dir + mkv)
     return None
 
 
 def create_dirs():
-    if not os.path.isdir(todir):
-        os.makedirs(todir)
+    if not os.path.isdir(to_dir):
+        os.makedirs(to_dir)
     if not os.path.isdir(tmp_dir):
         os.makedirs(tmp_dir)
-    if not os.path.isdir(f"{tmp_dir}source\\"):
-        os.makedirs(f"{tmp_dir}source\\")
+    # if not os.path.isdir(f"{tmp_dir}source\\"):
+    #     os.makedirs(f"{tmp_dir}source\\")
     return None
 
 
 def worker(cmd):
+    # subprocess.call(cmd)
     subprocess.call(cmd, creationflags=subprocess.CREATE_NEW_CONSOLE)
 
 
 if __name__ == "__main__":
-    cmds = command_generator(fromdir, tmp_dir, del_data=False, del_subs=False, opus=create_opus,
+    cmds = command_generator(del_data=False, del_subs=False, opus=create_opus,
                              opus_smart_activate=True)
     create_dirs()
     # запускаю его после точки входа и никаких проблем.
@@ -196,7 +202,7 @@ if __name__ == "__main__":
     pool.close()
     pool.join()
     if need_fix:
-        fix_files(tmp_dir, todir, delay)
+        fix_files(delay)
 
 # def merge_hevc(from_dir, to_dir):
 #     if not os.path.isdir(to_dir):
