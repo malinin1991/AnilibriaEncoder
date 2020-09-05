@@ -156,7 +156,7 @@ def fix_files(fix_delay=False):
                         '--track-name !num:Original --language !num:{lang} --default-track !num:no --forced-track !num:no '.format(
                             lang=lang)]
         video = [
-            '--track-name !num:"Original {nickname}" --language !num:{lang} --default-track !num:yes --forced-track !num:yes '.format(
+            '--track-name !num:"Original{nickname}" --language !num:{lang} --default-track !num:yes --forced-track !num:yes '.format(
                 nickname=suffix, lang=lang)]
         tags = ['--no-track-tags --no-global-tags --title "" ']
         params = video + audio + subs + tags
