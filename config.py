@@ -1,12 +1,12 @@
 suffix = ' [GeeKaZ0iD]'  # Суффикс после имени оригинальной дорожки
 
-from_dir = r'C:\temp1\\'
-to_dir = r'Z:\Ongoing\JoJo no Kimyou na Bouken Stardust Crusaders - AniLibria.TV [BDRip 1080p HEVC]\\'
+from_dir = r'C:\temp\\'
+to_dir = r'Z:\Ongoing\Golden Kamuy 3 - AniLibria.TV [WEBRip 1080p HEVC]\\'
 tmp_dir = r'C:\tedmp\\'
 
 need_encode = True  # Видео будет скодировано
 need_fix = True  # Дорожки будут исправлены и переименованы
-create_opus = True  # Сейчас замутим opus
+create_opus = False  # Сейчас замутим opus
 create_opus_lq = False
 is51 = False  # Будет подготовлен звук из дорожки 2.0
 prepare = False  # Будет полностью готовый HEVC
