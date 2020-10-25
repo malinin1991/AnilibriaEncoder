@@ -165,10 +165,8 @@ def fix_files(fix_delay=False):
         for param in params:
             cmd_param += param.replace('!num', str(track_num)).replace('!rel', str(rel.get(track_num + 1)))
             track_num += 1
-        cmd = '"{mkvmerge}"'.format(mkvmerge=mkvmerge) + ' -o {output}'.format(
-            output='"' + to_dir + mkv.replace(rename_mask_from,
-                                              rename_mask_to)) + '" ' + cmd_param + ' --title "" ' + '"{input}"'.format(
-            input=tmp_dir + mkv)
+        mkv_hevc = mkv.replace('Anilibria', 'AniLibria').replace(rename_mask_from, rename_mask_to)
+        cmd = f'"{mkvmerge}" -o "{to_dir}{mkv_hevc} " {cmd_param} "{tmp_dir + mkv}"'
         print(cmd)
 
         process = subprocess.run(cmd, shell=True)
@@ -195,7 +193,7 @@ def worker(cmd):
 if __name__ == "__main__":
     cmds = command_generator(del_data=False, del_subs=False, opus=create_opus,
                              opus_smart_activate=True)
-    print(f'В очередь пришло файлов: {len(cmds)}')                       
+    print(f'В очередь пришло файлов: {len(cmds)}\n')
     create_dirs()
     success = 0
     errors = 0
@@ -203,15 +201,19 @@ if __name__ == "__main__":
     # запускаю его после точки входа и никаких проблем.
     with Pool(processes=runners_count) as pool:
         for i in pool.imap_unordered(worker, cmds):
+            cmd = cmds[success + errors]
+            file = cmd[cmd.find('-i "')+4:cmd.find('" -c')]
+            print(f'Завершена работа над файлом {file}')
             if i is None:
                 success += 1
             else:
                 print(f'Произошла ошибка в команде {cmds[success+errors]}')
                 errors += 1
             summary -= 1
-            print(f'Осталось: {summary}')
             print(f'Успешно: {success}')
-        print(f'Ошибки: {errors}')
+            print(f'Ошибки: {errors}')
+            print(f'Осталось: {summary}')
+            print('\n')
         print('\n\n')
     if need_fix:
         fix_files(delay)
