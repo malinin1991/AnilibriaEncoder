@@ -1,7 +1,7 @@
 suffix = ' [GeeKaZ0iD]'  # Суффикс после имени оригинальной дорожки
 
 from_dir = r'C:\temp\\'
-to_dir = r'Z:\Ongoing\Golden Kamuy 3 - AniLibria.TV [WEBRip 1080p HEVC]\\'
+to_dir = r'Z:\AniLibria.TV\2007\Seto no Hanayome - AniLibria.TV [BDRip 1080p HEVC]\\'
 tmp_dir = r'C:\tedmp\\'
 
 need_encode = True  # Видео будет скодировано
@@ -28,4 +28,4 @@ else:
 lang = 'jpn'
 delay = True
 
-runners_count = 2
+runners_count = 4

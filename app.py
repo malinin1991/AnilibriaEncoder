@@ -6,13 +6,13 @@ from multiprocessing import Pool
 import subprocess
 import os
 
-tmp_dir += ''.join(choices(ascii_uppercase + digits, k=8))+'\\'
+tmp_dir += ''.join(choices(ascii_uppercase + digits, k=20)) + '\\'
+
 
 # Удаление тегов. На вход - путь к файлу mkv.
 def del_tags(mkv):
     # Удаление тегов делается через ключ "--tags all: ". Пробел на конце важен.
-    subprocess.run('"{mkvpropedit}"'.format(mkvpropedit=mkvpropedit) + ' {mkv} --tags all: '.format(mkv=mkv),
-                   shell=True)
+    subprocess.run(f'"{mkvpropedit}" {mkv} --tags all: ', shell=True)
     return None
 
 
@@ -47,12 +47,12 @@ def smart_opus(media_info, active):
 
 
 def command_generator(del_data=False, del_subs=False,
-                      opus=False, opus_from_51=False, opus_smart_activate=False):
+                      opus=False, opus_from_51=False, opus_smart_activate=True):
     commands = []
     str_commands = []
     files = filter(lambda x: x.endswith('.mkv'), os.listdir(from_dir))
-    for file in files:
-        media_info = MediaInfo.parse(from_dir + file)
+    for file1 in files:
+        media_info = MediaInfo.parse(from_dir + file1)
         fr_den = media_info.tracks[1].framerate_den
         fr_num = media_info.tracks[1].framerate_num
         if fr_den is None or fr_num is None:
@@ -60,14 +60,14 @@ def command_generator(del_data=False, del_subs=False,
         else:
             rate = f'{fr_num}/{fr_den}'
         command = {'-hide_banner': '',
-                   '-i': f'"{from_dir + file}"',
+                   '-i': f'"{from_dir + file1}"',
                    '-c:v': 'libx265',
                    '-preset': f'{hevc_preset}',
                    '-crf': f'{hevc_crf_level}',
                    '-vf': '"format=yuv420p10le"',
                    '-x265-params': f'"level=5.1:ref=6"',
                    '-r': f'{rate}'}
-        #'-x265-params': f'"level=5.1:crf={hevc_crf_level}:ref=6"',
+        # '-x265-params': f'"level=5.1:crf={hevc_crf_level}:ref=6"',
         if del_data:
             command['-dn'] = ''
         if del_subs:
@@ -81,7 +81,7 @@ def command_generator(del_data=False, del_subs=False,
         else:
             command['-acodec'] = 'copy'
         command['-map'] = '0'
-        command['-f'] = f'matroska "{tmp_dir + file}"'
+        command['-f'] = f'matroska "{tmp_dir + file1}"'
         commands.append(command)
     for command in commands:
         str_command = f'"{ffmpeg}" '
@@ -133,13 +133,11 @@ def fix_files(fix_delay=False):
                 if create_opus:
                     audio = [
                         '--track-name !num:AniLibria.TV --language !num:rus --default-track !num:yes --forced-track !num:yes --sync !num:!rel ',
-                        '--track-name !num:"Original{nick}" --language !num:{lang} --default-track !num:no --forced-track !num:no --sync !num:!rel '.format(
-                            lang=lang, nick=suffix)]
+                        f'--track-name !num:"Original{suffix}" --language !num:{lang} --default-track !num:no --forced-track !num:no --sync !num:!rel ']
                 else:
                     audio = [
                         '--track-name !num:AniLibria.TV --language !num:rus --default-track !num:yes --forced-track !num:yes --sync !num:!rel ',
-                        '--track-name !num:Original --language !num:{lang} --default-track !num:no --forced-track !num:no --sync !num:!rel '.format(
-                            lang=lang)]
+                        f'--track-name !num:Original --language !num:{lang} --default-track !num:no --forced-track !num:no --sync !num:!rel ']
         else:
             if audio_count == 1:
                 audio = [
@@ -148,16 +146,13 @@ def fix_files(fix_delay=False):
                 if create_opus:
                     audio = [
                         '--track-name !num:AniLibria.TV --language !num:rus --default-track !num:yes --forced-track !num:yes ',
-                        '--track-name !num:"Original{nick}" --language !num:{lang} --default-track !num:no --forced-track !num:no '.format(
-                            lang=lang, nick=suffix)]
+                        f'--track-name !num:"Original{suffix}" --language !num:{lang} --default-track !num:no --forced-track !num:no ']
                 else:
                     audio = [
                         '--track-name !num:AniLibria.TV --language !num:rus --default-track !num:yes --forced-track !num:yes ',
-                        '--track-name !num:Original --language !num:{lang} --default-track !num:no --forced-track !num:no '.format(
-                            lang=lang)]
+                        f'--track-name !num:Original --language !num:{lang} --default-track !num:no --forced-track !num:no ']
         video = [
-            '--track-name !num:"Original{nickname}" --language !num:{lang} --default-track !num:yes --forced-track !num:yes '.format(
-                nickname=suffix, lang=lang)]
+            f'--track-name !num:"Original{suffix}" --language !num:{lang} --default-track !num:yes --forced-track !num:yes ']
         tags = ['--no-track-tags --no-global-tags --title "" ']
         params = video + audio + subs + tags
         track_num = 0
@@ -165,11 +160,19 @@ def fix_files(fix_delay=False):
         for param in params:
             cmd_param += param.replace('!num', str(track_num)).replace('!rel', str(rel.get(track_num + 1)))
             track_num += 1
-        mkv_hevc = mkv.replace('Anilibria', 'AniLibria').replace(rename_mask_from, rename_mask_to)
-        cmd = f'"{mkvmerge}" -o "{to_dir}{mkv_hevc} " {cmd_param} "{tmp_dir + mkv}"'
-        print(cmd)
+        mkv_hevc = mkv
+        for r in (('Anilibria', 'AniLibria'),
+                  (' ', '_'),
+                  ('.', '_', mkv_hevc.count('.') - 1),
+                  ('_Tv', '_TV'),
+                  ('_tV', '_TV'),
+                  ('_tv', '_TV'),
+                  (rename_mask_from, rename_mask_to)):
+            mkv_hevc = mkv_hevc.replace(*r)
+        command = f'"{mkvmerge}" -o "{to_dir}{mkv_hevc} " {cmd_param} "{tmp_dir + mkv}"'
+        print(command)
 
-        process = subprocess.run(cmd, shell=True)
+        process = subprocess.run(command, shell=True)
         if process.returncode == 0:
             os.remove(tmp_dir + mkv)
     return None
@@ -202,12 +205,12 @@ if __name__ == "__main__":
     with Pool(processes=runners_count) as pool:
         for i in pool.imap_unordered(worker, cmds):
             cmd = cmds[success + errors]
-            file = cmd[cmd.find('-i "')+4:cmd.find('" -c')]
+            file = cmd[cmd.find('-i "') + 4:cmd.find('" -c')]
             print(f'Завершена работа над файлом {file}')
             if i is None:
                 success += 1
             else:
-                print(f'Произошла ошибка в команде {cmds[success+errors]}')
+                print(f'Произошла ошибка в команде {cmds[success + errors]}')
                 errors += 1
             summary -= 1
             print(f'Успешно: {success}')

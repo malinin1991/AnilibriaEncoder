@@ -1,0 +1,13 @@
+name: prepare
+preset: prepare
+video:
+- name: Original
+  default: true
+  codec: libx265
+  crf: 23
+  preset: medium
+  vf: '"format=yuv420p10le"'
+  x265-params: '"level=5.1:ref=6"'
+audio:
+- name: Original
+  codec: copy

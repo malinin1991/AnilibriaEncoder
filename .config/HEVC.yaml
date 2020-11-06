@@ -1,0 +1,20 @@
+name: HEVC
+preset: HEVC
+video:
+- name: Original
+  default: true
+  codec: libx265
+  crf: 23
+  preset: medium
+  vf: '"format=yuv420p10le"'
+  x265-params: '"level=5.1:ref=6"'
+audio:
+- name: AniLibria.TV
+  codec: copy
+- name: Original
+  codec: copy
+subtitle:
+- name: Надписи
+  default: true
+- name: Полные
+  default: false
