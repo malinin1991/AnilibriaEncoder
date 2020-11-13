@@ -36,13 +36,13 @@ def smart_opus(media_info, active):
                     if bitrate < opus_bitrate:
                         opus_bitrate = bitrate
                 except TypeError:
-                    return smart_opus_dict[160]
+                    return smart_opus_dict[128]
         for key in smart_opus_dict:
             if key < opus_bitrate:
                 opus_bitrate = smart_opus_dict[key]
                 break
     else:
-        opus_bitrate = smart_opus_dict[160]
+        opus_bitrate = smart_opus_dict[128]
     return opus_bitrate
 
 
@@ -50,7 +50,7 @@ def command_generator(del_data=False, del_subs=False,
                       opus=False, opus_from_51=False, opus_smart_activate=True):
     commands = []
     str_commands = []
-    files = filter(lambda x: x.endswith('.mkv'), os.listdir(from_dir))
+    files = filter(lambda x: x.endswith('.mkv') or x.endswith('.mp4'), os.listdir(from_dir))
     for file1 in files:
         media_info = MediaInfo.parse(from_dir + file1)
         fr_den = media_info.tracks[1].framerate_den
@@ -194,6 +194,9 @@ def worker(cmd):
 
 
 if __name__ == "__main__":
+    print('Вас приветствует кодировщик видео для AniLibria.TV')
+    print('Версия: 2.0')
+    print('Разработка: GeeKaZ0iD\n')
     cmds = command_generator(del_data=False, del_subs=False, opus=create_opus,
                              opus_smart_activate=True)
     print(f'В очередь пришло файлов: {len(cmds)}\n')

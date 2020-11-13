@@ -10,8 +10,10 @@ video:
   x265-params: '"level=5.1:ref=6"'
 audio:
 - name: AniLibria.TV
+  default: true
   codec: copy
 - name: Original
+  default: false
   codec: copy
 subtitle:
 - name: Надписи
